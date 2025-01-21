@@ -1,0 +1,14 @@
+*.png
+*.pkl
+
+**/__pychache__/
+
+/venv/
+
+/build/
+/dist/
+/qsttoolkit.egg-info/
+
+directory_structure.py
+
+/docs/
