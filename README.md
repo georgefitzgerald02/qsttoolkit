@@ -169,7 +169,7 @@ qsttoolkit/
 
 ## Documentation
 
-Comprehensive docstrings can be found throughout the source code. Online documentation coming soon.
+[Documentation](https://qsttoolkit.readthedocs.io/) is available online, hosted by [ReadTheDocs](https://about.readthedocs.com/).
 
 ## Future Development
 
