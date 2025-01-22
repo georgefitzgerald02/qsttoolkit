@@ -11,5 +11,6 @@
 
 directory_structure.py
 
-/docs/
-/qsttoolkit-docs/
+/docs/_build/
+/docs/make.bat
+/docs/Makefile
