@@ -10,7 +10,7 @@ QSTToolkit is an open-source package for performing optical quantum state tomogr
 
 The key aim of QSTToolkit is to create a standard framework for researching, designing and comparing methods for quantum state tomography in noisy, high-dimensional, continuous quantum systems. Recently proposed models are implemeted, using standardized synthetic data to allow for fully valid comparison between approaches.
 
-This page contains documentation for QSTToolkit and its subpackages. Detailed usage instructions with example notebooks can be found in the package's `GitHub repository <https://github.com/georgefitzgerald02/qsttoolkit>`. This work is the culmination of a physics masters project by George FitzGerald (gwfitzg@hotmail.com) at `Durham University's Department of Physics <https://www.durham.ac.uk/departments/academic/physics/>`_.
+This page contains documentation for QSTToolkit and its subpackages. Detailed usage instructions with example notebooks can be found in the package's `GitHub repository <https://github.com/georgefitzgerald02/qsttoolkit>`_. This work is the culmination of a physics masters project by George FitzGerald (gwfitzg@hotmail.com) at `Durham University's Department of Physics <https://www.durham.ac.uk/departments/academic/physics/>`_.
 
 Links
 =====
