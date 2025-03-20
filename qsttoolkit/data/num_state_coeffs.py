@@ -2,6 +2,8 @@ import math
 import numpy as np
 
 
+##### Numerically optimized Fock state parameters used to generate num states #####
+
 coeffs17 = [
     [
         1 / math.sqrt(6) * math.sqrt(7 - math.sqrt(17)), 

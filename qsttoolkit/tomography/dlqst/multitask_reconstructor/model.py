@@ -1,8 +1,10 @@
-import tensorflow as tf
-import matplotlib.pyplot as plt
 import numpy as np
-from sklearn.metrics import confusion_matrix, classification_report
+import matplotlib.pyplot as plt
 import seaborn as sns
+import sklearn.preprocessing
+from sklearn.metrics import confusion_matrix, classification_report
+import tensorflow as tf
+import warnings
 
 from qsttoolkit.tomography.dlqst.multitask_reconstructor.architecture import build_multitask_reconstructor
 
@@ -13,72 +15,75 @@ class MultitaskQuantumStateTomography:
 
     Attributes
     ----------
-    dim : int
-        The Hilbert space dimensionality.
-    latent_dim : int
-        The phase space dimensionality.
     X_train : np.ndarray
-        The training data.
+        Training data.
     X_test : np.ndarray
-        The test data.
+        Test data.
     y_train : dict
-        A dictionary containing both the training classification and regression labels.
+        Dictionary containing both the training classification and regression labels.
     y_test : dict
-        A dictionary containing both the test classification and regression labels.
+        Dictionary containing both the test classification and regression labels.
     label_encoder : sklearn.preprocessing.LabelEncoder
-        The label encoder for the classification labels.
-    model : tf.keras.Model
-        The multitask model.
-    early_stopping : tf.keras.callbacks.EarlyStopping
-        The early stopping callback.
-    lr_scheduler : tf.keras.callbacks.ReduceLROnPlateau
-        The learning rate scheduler callback.
-    callbacks : list
-        The list of callbacks. 
-    history : tf.keras.callbacks.History
-        The training history.
+        Label encoder for the classification labels.
+    early_stopping_patience : int
+        Number of epochs with no improvement after which training will be stopped. Defaults to 30.
+    lr_scheduler_factor : float
+        Factor by which the learning rate will be reduced. Must be < 1. Defaults to 0.5.
+    lr_scheduler_patience : int
+        Number of epochs with no improvement after which learning rate will be reduced. Defaults to 15.
     """
-    def __init__(self, dim: int, X_train, X_test, y_train, y_test, label_encoder, early_stopping_patience=3, lr_scheduler_factor=0.5, lr_scheduler_patience=2):
+    def __init__(self, X_train: np.ndarray, X_test: np.ndarray, y_train: np.ndarray, y_test: np.ndarray, label_encoder: sklearn.preprocessing.LabelEncoder, early_stopping_patience: int=30, lr_scheduler_factor: float=0.5, lr_scheduler_patience: int=15, dim=None):
+        if dim: warnings.warn("dim is no longer required for this class and will be removed in a future version.", DeprecationWarning, stacklevel=2)
+        
         self.X_train = X_train
         self.X_test = X_test
         self.y_train = y_train
         self.y_test = y_test
         self.label_encoder = label_encoder
-        self.dim = dim
-        self.latent_dim = X_train[0].shape[0]
+        self.data_dim = X_train[0].shape[0]
 
-        self.model = build_multitask_reconstructor(input_shape=(self.latent_dim, self.latent_dim, 1), num_classes=len(self.label_encoder.classes_), num_regression_outputs=2)
+        self.model = build_multitask_reconstructor(input_shape=(self.data_dim, self.data_dim, 1), num_classes=len(self.label_encoder.classes_), num_regression_outputs=2)
         self.early_stopping = tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=early_stopping_patience)
         self.lr_scheduler = tf.keras.callbacks.ReduceLROnPlateau(monitor='val_loss', factor=lr_scheduler_factor, patience=lr_scheduler_patience)
         self.callbacks = [self.early_stopping, self.lr_scheduler]
 
-    def train(self, optimizer='adam', classification_loss='sparse_categorical_crossentropy', regression_loss='mse', classification_loss_weight=1.0, regression_loss_weight=0.5, classification_metric='accuracy', regression_metric='mae', epochs=30, batch_size=32, validation_split=0.2):
+    def train(self, optimizer=tf.keras.optimizers.Adam(learning_rate=0.0005, beta_1=0.9, beta_2=0.999), classification_loss='sparse_categorical_crossentropy', regression_loss='mse', classification_loss_weight: float=1.0, regression_loss_weight: float=0.5, classification_metric: str='accuracy', regression_metric: str='mae', epochs: int=30, batch_size: int=32, validation_split: float=0.2, verbose='auto'):
         """
         Compiles and trains the model.
 
         Parameters
         ----------
-        optimizer : str
-            The optimizer to use in the training. Defaults to 'adam'.
-        classification_loss : str
-            The classification loss function to use in the training. Defaults to 'sparse_categorical_crossentropy'.
-        regression_loss : str
-            The regression loss function to use in the training. Defaults to 'mse'.
+        optimizer
+            Optimizer to use in the training. Defaults to Adam with learning rate 0.0005, beta_1=0.9, and beta_2=0.999.
+        classification_loss
+            Classification loss function to use in the training. Defaults to 'sparse_categorical_crossentropy'.
+        regression_loss
+            Regression loss function to use in the training. Defaults to 'mse'.
         classification_loss_weight : float
-            The weight of the classification loss in the total loss. Defaults to 1.0.
+            Weight of the classification loss in the total loss. Defaults to 1.0.
         regression_loss_weight : float
-            The weight of the regression loss in the total loss. Defaults to 0.5.
+            Weight of the regression loss in the total loss. Defaults to 1.0.
         classification_metric : str
-            The metric to measure classification performance during training. Defaults to 'accuracy'.
+            Metric to measure classification performance during training. Defaults to 'accuracy'.
         regression_metric : str
-            The metric to measure regression performance during training. Defaults to 'mae'.
+            Metric to measure regression performance during training. Defaults to 'mse'.
         epochs : int
-            The number of epochs to train the model. Defaults to 30.
+            Number of epochs to train the model. Defaults to 30.
         batch_size : int
-            The training batch size. Defaults to 32.
+            Training batch size. Defaults to 32.
         validation_split : float
-            The fraction of the training data to use as validation data. Defaults to 0.2.
+            Fraction of the training data to use as validation data. Defaults to 0.2.
+        verbose
+            Verbosity mode. Defaults to 'auto'.
         """
+        self.optimizer = optimizer
+        self.classification_loss = classification_loss
+        self.regression_loss = regression_loss
+        self.classification_loss_weight = classification_loss_weight
+        self.regression_loss_weight = regression_loss_weight
+        self.classification_metric = classification_metric  
+        self.regression_metric = regression_metric
+
         self.model.compile(optimizer=optimizer,
                             loss={
                                 "classification_output": classification_loss,
@@ -97,42 +102,41 @@ class MultitaskQuantumStateTomography:
                                       epochs=epochs,
                                       batch_size=batch_size,
                                       validation_split=validation_split,
-                                      callbacks=self.callbacks)
+                                      callbacks=self.callbacks,
+                                      verbose=verbose)
 
     def plot_training(self):
-        """
-        Plots the training history over epochs.
-        """
-        fig, axs = plt.subplots(1, 3, figsize=(20, 5))
+        """Plots the training history over epochs."""
+        _, axs = plt.subplots(1, 3, figsize=(20, 5))
 
-        # Plot training & validation accuracy
-        axs[0].plot(self.history.history['classification_output_accuracy'], label='train accuracy')
-        axs[0].plot(self.history.history['val_classification_output_accuracy'], label='val accuracy')
-        axs[0].set_ylim(0,1)
-        axs[0].set_title('Model Accuracy')
-        axs[0].set_ylabel('Accuracy')
+        # Plot training & validation classsification metrics
+        axs[0].plot(self.history.history[f"classification_output_{self.classification_metric}"], label=f"train {self.classification_metric}")
+        axs[0].plot(self.history.history[f"val_classification_output_{self.classification_metric}"], label=f"validation {self.classification_metric}")
+        if self.classification_metric == 'accuracy': axs[0].set_ylim(0,1)
+        axs[0].set_title(f"Model {self.classification_metric.capitalize()}")
+        axs[0].set_ylabel(self.classification_metric.capitalize())
         axs[0].set_xlabel('Epoch')
         axs[0].legend()
 
-        # Plot training & validation mae
-        axs[1].plot(self.history.history['regression_output_mae'], label='train mae')
-        axs[1].plot(self.history.history['val_regression_output_mae'], label='val mae')
-        axs[1].set_title('Model MAE')
-        axs[1].set_ylabel('MAE')
+        # Plot training & validation regression metrics
+        axs[1].plot(self.history.history[f"regression_output_{self.regression_metric}"], label=f"train {self.regression_metric}")
+        axs[1].plot(self.history.history[f"val_regression_output_{self.regression_metric}"], label=f"validation {self.regression_metric}")
+        axs[1].set_title(f"Model {self.regression_metric}")
+        axs[1].set_ylabel(self.regression_metric)
         axs[1].set_xlabel('Epoch')
         axs[1].legend()
 
-        # Plot training & validation loss
+        # Plot training & validation composite loss
         axs[2].plot(self.history.history['loss'], label='train loss')
-        axs[2].plot(self.history.history['val_loss'], label='val loss')
-        axs[2].set_title('Model Loss')
-        axs[2].set_ylabel('Loss')
+        axs[2].plot(self.history.history['val_loss'], label='validation loss')
+        axs[2].set_title('Model Composite Loss')
+        axs[2].set_ylabel('Composite Loss')
         axs[2].set_xlabel('Epoch')
         axs[2].legend()
 
         plt.show()
 
-    def evaluate_classification(self, include_confusion_matrix=True, include_classification_report=True):
+    def evaluate_classification(self, include_confusion_matrix: bool=True, include_classification_report: bool=True):
         """
         Evaluates the classification performance of the model.
 
@@ -151,8 +155,8 @@ class MultitaskQuantumStateTomography:
             cm = confusion_matrix(self.y_test['classification_output'], y_pred)
             sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', xticklabels=self.label_encoder.classes_, yticklabels=self.label_encoder.classes_)
             plt.title('Confusion Matrix')
-            plt.xlabel('Predicted')
-            plt.ylabel('True')
+            plt.xlabel('Predicted Class')
+            plt.ylabel('True Class')
             plt.show()
 
         if include_classification_report:
@@ -162,9 +166,7 @@ class MultitaskQuantumStateTomography:
             print(class_report)
 
     def evaluate_regression(self):
-        """
-        Evaluates the regression performance of the model.
-        """
+        """Evaluates the regression performance of the model by plotting the predictions vs true values for each class."""
         predictions = self.model.predict(self.X_test)
         fig, axs = plt.subplots(1, len(self.label_encoder.classes_), figsize=(25, 4))
         fig.suptitle("Regression predictions vs true values for each true class")
@@ -180,14 +182,19 @@ class MultitaskQuantumStateTomography:
             ax.set_xlabel("True value")
         plt.show()
 
-    def infer(self, data):
+    def infer(self, data: np.ndarray):
         """
         Infers the quantum state label and key parameter from input data.
 
         Parameters
         ----------
         data : np.ndarray
-            The input data.
+            Input data.
+
+        Returns
+        -------
+        np.ndarray
+            Predicted quantum state labels.
         """
         predictions = self.model.predict(data)
         y_pred = np.argmax(predictions[0], axis=1)

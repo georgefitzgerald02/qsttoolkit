@@ -4,17 +4,17 @@ from tensorflow.keras import layers, Model
 
 def build_classifier(data_input_shape: tuple) -> tf.keras.Model:
     """
-    Builds a simple CNN classifier for QST data.
+    Builds a CNN classifier network for QST data.
     
     Parameters
     ----------
     data_input_shape : tuple
-        The shape of the input data.
+        Shape of the input data.
         
     Returns
     -------
     tf.keras.Model
-        The classifier model.
+        Classifier model.
     """
     input = layers.Input(shape=data_input_shape)
 

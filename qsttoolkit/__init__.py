@@ -4,9 +4,8 @@ from .data.state_batches import FockStates, CoherentStates, ThermalStates, NumSt
 from .data.datasets import *
 
 from .tomography.QST import *
-from .tomography.tradqst.MLE import log_likelihood, MLEQuantumStateTomography
+from .tomography.tradqst.MLE_reconstructor.model import MLEQuantumStateTomography
 from .tomography.dlqst.GAN_reconstructor.model import GANQuantumStateTomography
-from .tomography.dlqst.GAN_reconstructor.train import expectation
 from .tomography.dlqst.CNN_classifier.model import CNNQuantumStateDiscrimination
 from .tomography.dlqst.multitask_reconstructor.model import MultitaskQuantumStateTomography
 from .tomography.dlqst.multitask_reconstructor.reconstruction import StateReconstructor

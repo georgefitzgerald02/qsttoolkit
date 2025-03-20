@@ -6,24 +6,24 @@ with open("README.md", "r") as fh:
 
 setup(
     name="qsttoolkit", 
-    version="1.0.0", 
+    version="1.1.0", 
     description="The definitive, open-source package for performing optical quantum state tomography using both traditional (statistical) and novel deep learning-powered methods in Python.", 
     long_description=long_description, 
     long_description_content_type="text/markdown", 
     author="George FitzGerald", 
     author_email="gwfitzg@hotmail.com", 
-    url="https://github.com/georgefitzgerald02/qst-toolkit",
+    url="https://github.com/georgefitzgerald02/qsttoolkit",
     license="MIT",
     packages=find_packages(), 
     install_requires=[
-        "numpy==1.26.4",
-        "scipy==1.13.1",
+        "numpy==2.0.2",
+        "scipy==1.14.1",
         "pandas==2.2.2",
         "matplotlib==3.10.0",
         "seaborn==0.13.2",
         "qutip==5.1.1",
-        "scikit-learn==1.6.0",
-        "tensorflow==2.17.1"
+        "scikit-learn==1.6.1",
+        "tensorflow>=2.18.0"
     ], 
     classifiers=[
         "Programming Language :: Python :: 3",  # Python 3 compatibility

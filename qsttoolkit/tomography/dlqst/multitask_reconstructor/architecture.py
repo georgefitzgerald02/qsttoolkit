@@ -9,35 +9,35 @@ def build_feature_extractor(input_shape: tuple) -> tf.keras.Model:
     Parameters
     ----------
     input_shape : tuple
-        The shape of the input data.
+        Shape of the input data.
 
     Returns
     -------
     tf.keras.Model
-        The feature extractor model.
+        Feature extractor model.
     """
     inputs = tf.keras.Input(shape=input_shape)
     x = layers.Conv2D(32, (3, 3))(inputs)
-    x = layers.LeakyReLU(alpha=0.1)(x)
+    x = layers.LeakyReLU(negative_slope=0.1)(x)
 
     x = layers.Conv2D(32, (3, 3))(x)
-    x = layers.LeakyReLU(alpha=0.1)(x)
+    x = layers.LeakyReLU(negative_slope=0.1)(x)
     x = layers.GaussianNoise(0.1)(x)
     x = layers.Dropout(0.2)(x)
 
     x = layers.Conv2D(64, (3, 3))(x)
-    x = layers.LeakyReLU(alpha=0.1)(x)
+    x = layers.LeakyReLU(negative_slope=0.1)(x)
 
     x = layers.Conv2D(128, (3, 3))(x)
-    x = layers.LeakyReLU(alpha=0.1)(x)
+    x = layers.LeakyReLU(negative_slope=0.1)(x)
     x = layers.GaussianNoise(0.1)(x)
     x = layers.Dropout(0.2)(x)
 
     x = layers.Conv2D(256, (3, 3))(x)
-    x = layers.LeakyReLU(alpha=0.1)(x)
+    x = layers.LeakyReLU(negative_slope=0.1)(x)
 
     x = layers.Conv2D(512, (3, 3))(x)
-    x = layers.LeakyReLU(alpha=0.1)(x)
+    x = layers.LeakyReLU(negative_slope=0.1)(x)
     x = layers.Dropout(0.2)(x)
 
     feature_vector = layers.Flatten()(x)
@@ -50,21 +50,21 @@ def build_classification_tail(input_features: tf.Tensor, num_classes: int) -> tf
     Parameters
     ----------
     input_features : tf.Tensor
-        The input feature vector.
+        Input feature vector.
     num_classes : int
-        The number of classes to classify.
+        Number of classes to classify into.
     
     Returns
     -------
     tf.Tensor
-        The output tensor of the classification tail.
+        Output tensor of the classification tail.
     """
     x = layers.Dense(64)(input_features)
-    x = layers.LeakyReLU(alpha=0.1)(x)
+    x = layers.LeakyReLU(negative_slope=0.1)(x)
     x = layers.Dropout(0.2)(x)
 
     x = layers.Dense(128)(x)
-    x = layers.LeakyReLU(alpha=0.1)(x)
+    x = layers.LeakyReLU(negative_slope=0.1)(x)
 
     output = layers.Dense(num_classes, activation='softmax', name="classification_output")(x)
     return output
@@ -77,27 +77,27 @@ def build_regression_tail(input_features: tf.Tensor, num_outputs: int) -> tf.Ten
     Parameters
     ----------
     input_features : tf.Tensor
-        The input feature vector.
+        Input feature vector.
     num_outputs : int
-        The number of regression outputs.
+        Number of regression outputs.
 
     Returns
     -------
     tf.Tensor
-        The output tensor of the regression tail.
+        Output tensor of the regression tail.
     """
     x = layers.Dense(64)(input_features)
-    x = layers.LeakyReLU(alpha=0.1)(x)
+    x = layers.LeakyReLU(negative_slope=0.1)(x)
     x = layers.Dense(128)(x)
-    x = layers.LeakyReLU(alpha=0.1)(x)
+    x = layers.LeakyReLU(negative_slope=0.1)(x)
     x = layers.Dense(256)(x)
-    x = layers.LeakyReLU(alpha=0.1)(x)
+    x = layers.LeakyReLU(negative_slope=0.1)(x)
     x = layers.Dense(256)(x)
-    x = layers.LeakyReLU(alpha=0.1)(x)
+    x = layers.LeakyReLU(negative_slope=0.1)(x)
     x = layers.Dense(256)(x)
-    x = layers.LeakyReLU(alpha=0.1)(x)
+    x = layers.LeakyReLU(negative_slope=0.1)(x)
     x = layers.Dense(128)(x)
-    x = layers.LeakyReLU(alpha=0.1)(x)
+    x = layers.LeakyReLU(negative_slope=0.1)(x)
     output = layers.Dense(num_outputs, name="regression_output")(x)
     return output
 
@@ -108,16 +108,16 @@ def build_multitask_reconstructor(input_shape: tuple, num_classes: int, num_regr
     Parameters
     ----------
     input_shape : tuple
-        The shape of the input data.
+        Shape of the input data.
     num_classes : int
-        The number of classes to classify.
+        Number of classes to classify.
     num_regression_outputs : int
-        The number of regression outputs.
+        Number of regression outputs.
 
     Returns
     -------
     tf.keras.Model
-        The multitask reconstructor model.
+        Multitask reconstructor model.
     """
     inputs = tf.keras.Input(shape=input_shape)
     feature_extractor = build_feature_extractor(input_shape)

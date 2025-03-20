@@ -1,64 +1,56 @@
 import tensorflow as tf
+import time
 
-from qsttoolkit.quantum import fidelity
+from qsttoolkit.tomography.QST import reconstruct_density_matrix
+from qsttoolkit.quantum import fidelity, expectation
 
 
-def expectation(rho, measurement_operators: list) -> tf.Tensor:
-    """
-    Computes the expectation values of the given density matrix with respect to the given projective measurement operators.
-    Uses excusively TensorFlow data types and operations in order to integrate efficiently with the rest of the GAN training when using a GPU.
-
-    Parameters
-    ----------
-    rho : tf.Tensor
-        Density matrix to compute the expectation values for.
-    measurement_operators : list of tf.Tensor
-        List of projective measurement operators to compute the expectation values with respect to.
-
-    Returns
-    -------
-    tf.Tensor
-        Expectation values of the density matrix with respect to the measurement operators.
-    """
-    measurements = [tf.linalg.trace(tf.matmul(E, rho)) for E in measurement_operators]
-    norm_real_measurements = tf.linalg.normalize(tf.math.real(measurements))[0]
-    return tf.reshape(norm_real_measurements, (1, len(norm_real_measurements)))
-
-def train(generator: tf.keras.Model, discriminator: tf.keras.Model, measurement_data: list, measurement_operators: list, epochs: int = 1000, verbose_interval: int = None, num_progress_saves: int = None, true_dm: tf.Tensor = None) -> tuple:
+def train(generator: tf.keras.Model, discriminator: tf.keras.Model, measurement_data: list, measurement_operators: list, epochs: int=100, gen_optimizer: tf.keras.optimizers.Optimizer=None, disc_optimizer: tf.keras.optimizers.Optimizer=None, loss_fn: tf.keras.losses.Loss=tf.keras.losses.BinaryCrossentropy(), verbose_interval: int=None, num_progress_saves: int=None, true_dm: tf.Tensor=None, time_log_interval: int=None) -> tuple:
     """
     Trains the generator and discriminator networks adversarially using the given measurement data and projective measurement operators.
 
     Parameters
     ----------
     generator : tf.keras.Model
-        The generator network.
+        Generator network.
     discriminator : tf.keras.Model
-        The discriminator network.
-    measurement_data : list of tf.Tensor
-        The measurement data to train the networks on.
-    measurement_operators : list of tf.Tensor
-        The projective measurement operators corresponding to the measurement data.
+        Discriminator network.
+    measurement_data : list of np.ndarray
+        Frequency of each measurement outcome.
+    measurement_operators : list of np.ndarray
+        Projective operators corresponding to the measurement outcomes.
     epochs : int
-        The number of training epochs. Default is 1000.
+        Number of epochs to train for. Defaults to 100.
+    gen_optimizer : tf.keras.optimizers.Optimizer
+        Generator optimizer. Defaults to Adam with learning rate 0.0002.
+    disc_optimizer : tf.keras.optimizers.Optimizer
+        Discriminator optimizer. Defaults to Adam with learning rate 0.0002.
+    loss_fn : tf.keras.losses.Loss
+        Loss function to use. Defaults to BinaryCrossentropy.
     verbose_interval : int
-        The interval at which to print progress updates. Default is None.
+        Interval at which to print progress updates. Defaults to None.
     num_progress_saves : int
-        The number of intermediate progress saves to make. Default is None.
+        Number of intermediate progress saves to make. Defaults to None.
+    true_dm : tf.Tensor
+        True density matrix used for calculating fidelities. Defaults to None.
+    time_log_interval : int
+        Interval at which to log the time taken after each epoch. Defaults to None.
 
     Returns
     -------
     list of tf.Tensor
-        The generator losses.
+        Generator losses.
     list of tf.Tensor
-        The discriminator losses.
-    list of tf.Tensor
-        The intermediate progress saves.
-    list of tf.Tensor
-        The fidelities of the generator density matrices with respect to the true density matrix.
+        Discriminator losses.
+    list of np.ndarray
+        Intermediate progress saves.
+    list of float
+        Fidelities of the generator density matrices with respect to the true density matrix.
+    list of float
+        Time taken after each epoch.
     """
-    gen_optimizer = tf.keras.optimizers.Adam(learning_rate=0.0002)
-    disc_optimizer = tf.keras.optimizers.Adam(learning_rate=0.0002)
-    loss_fn = tf.keras.losses.BinaryCrossentropy()
+    gen_optimizer = gen_optimizer if gen_optimizer else tf.keras.optimizers.Adam(learning_rate=0.0002)
+    disc_optimizer = disc_optimizer if disc_optimizer else tf.keras.optimizers.Adam(learning_rate=0.0002)
 
     gen_losses = []
     disc_losses = []
@@ -68,71 +60,60 @@ def train(generator: tf.keras.Model, discriminator: tf.keras.Model, measurement_
     else:
         progress_saves = None
     fidelities = [] if true_dm is not None else None
+    if time_log_interval:
+        start_time = time.time()
+        times = []
+    else:
+        times = None
 
     for epoch in range(epochs):
-        epoch_gen_loss = 0.0
-        epoch_disc_loss = 0.0
-        if true_dm is not None: epoch_fidelity = 0.0
+        # Forward pass through generator
+        with tf.GradientTape() as tape_gen, tf.GradientTape() as tape_disc:
+            # Generator output - Cholesky decomposition
+            parametrized_generated_dm = generator(measurement_data)
 
-        steps = len(measurement_data)
+            # Invert Cholesky decomposition
+            generated_dm = reconstruct_density_matrix(parametrized_generated_dm)
 
-        for i in range(steps):
-            # Select a single real vector
-            real_measurements = measurement_data[i]
+            # Expectation values
+            generated_measurements = expectation(generated_dm, measurement_operators)
 
-            # Forward pass through generator
-            # noise = tf.random.normal([1, real_v.shape[1]])  # Shape (1, latent_dim)
-            with tf.GradientTape() as tape_gen, tf.GradientTape() as tape_disc:
-                # Generator output - density matrix
-                generated_dm = generator(real_measurements)
+            # Discriminator outputs
+            reconstructed_preds = discriminator(generated_measurements)  # Reconstructed data vector probability
+            real_preds = discriminator(measurement_data)  # Original data vector probability
 
-                # Calculate expectations
-                generated_measurements = expectation(generated_dm, measurement_operators)
+            # Loss functions
+            epoch_disc_loss = (loss_fn(tf.ones_like(real_preds), real_preds) + loss_fn(tf.zeros_like(reconstructed_preds), reconstructed_preds)) / 2
+            epoch_gen_loss = loss_fn(tf.ones_like(reconstructed_preds), reconstructed_preds)
 
-                # Discriminator outputs
-                reconstructed_preds = discriminator(generated_measurements)  # Reconstructed data vector probability
-                real_preds = discriminator(real_measurements)  # Original data vector probability
+            # Fidelities
+            if true_dm is not None: epoch_fidelity = fidelity(generated_dm[0].numpy(), true_dm)
 
-                # Loss functions
-                disc_loss = (loss_fn(tf.ones_like(real_preds), real_preds) + loss_fn(tf.zeros_like(reconstructed_preds), reconstructed_preds)) / 2
-                gen_loss = loss_fn(tf.ones_like(reconstructed_preds), reconstructed_preds)
+        # Backpropagation
+        grads_disc = tape_disc.gradient(epoch_disc_loss, discriminator.trainable_weights)
+        disc_optimizer.apply_gradients(zip(grads_disc, discriminator.trainable_weights))
 
-                # Fidelities
-                if true_dm is not None: step_fidelity = fidelity(generator(real_measurements), true_dm)
-
-            # Backpropagation
-            grads_disc = tape_disc.gradient(disc_loss, discriminator.trainable_weights)
-            disc_optimizer.apply_gradients(zip(grads_disc, discriminator.trainable_weights))
-
-            grads_gen = tape_gen.gradient(gen_loss, generator.trainable_weights)
-            gen_optimizer.apply_gradients(zip(grads_gen, generator.trainable_weights))
-
-            # Accumulate losses
-            epoch_gen_loss += gen_loss
-            epoch_disc_loss += disc_loss
-
-            # Accumulate fidelities
-            if true_dm is not None: epoch_fidelity += step_fidelity
-
-        # Calculate average losses for the epoch
-        avg_gen_loss = epoch_gen_loss / steps
-        avg_disc_loss = epoch_disc_loss / steps
+        grads_gen = tape_gen.gradient(epoch_gen_loss, generator.trainable_weights)
+        gen_optimizer.apply_gradients(zip(grads_gen, generator.trainable_weights))
 
         # Append losses to the lists
-        gen_losses.append(avg_gen_loss)
-        disc_losses.append(avg_disc_loss)
+        gen_losses.append(epoch_gen_loss)
+        disc_losses.append(epoch_disc_loss)
 
         # ...for fidelities
         if true_dm is not None:
-            avg_fidelity = epoch_fidelity
-            fidelities.append(avg_fidelity)
+            fidelities.append(epoch_fidelity)
 
         # Save progress
         if num_progress_saves and epoch % progress_save_interval == 0:
-            progress_saves.append(generator(real_measurements))
+            progress_saves.append(generated_dm[0].numpy())
 
         # Log progress
         if verbose_interval and epoch % verbose_interval == 0:
-            print(f"Epoch {epoch}, Generator Loss: {avg_gen_loss.numpy()}, Discriminator Loss: {avg_disc_loss.numpy()}")
+            print(f"Epoch {epoch}/{epochs}, Generator Loss: {epoch_gen_loss.numpy()}, Discriminator Loss: {epoch_disc_loss.numpy()}, Fidelity: {epoch_fidelity if true_dm is not None else None}")
 
-    return gen_losses, disc_losses, progress_saves, fidelities
+        # Log time
+        if time_log_interval and epoch % time_log_interval == 0:
+            times.append(time.time() - start_time)
+
+    return gen_losses, disc_losses, progress_saves, fidelities, times

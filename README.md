@@ -1,11 +1,11 @@
 # QSTToolkit
 
-QSTToolkit is an open-source package for performing optical quantum state tomography (QST) research using both traditional (statistical) and novel deep learning-powered methods in Python. Key functionality includes:
+QSTToolkit is an open-source Python library for performing optical quantum state tomography (QST) using both traditional statistical and novel deep learning-powered methods. Key functionality includes:
 - Fast, compute-efficient and customisable generation of realistic synthetic data for a variety of optical quantum states using the [QuTiP](https://qutip.org/docs/4.0.2/index.html) package.
 - Maximum Likelihood Estimation quantum state tomography.
 - A variety of deep learning powered methods for quantum state discrimination and tomography.
 
-The key aim of QSTToolkit is to create a standard framework for researching, designing and comparing methods for quantum state tomography in noisy, high-dimensional, continuous quantum systems. Recently proposed models are implemeted, using standardised synthetic data to allow for fully valid comparison between approaches.
+The key aim of QSTToolkit is to create a standard framework for researching, designing and comparing methods for quantum state tomography in noisy, high-dimensional, continuous quantum systems. Recently proposed models are implemeted, using standardized synthetic data to allow for fully valid comparison between approaches.
 
 This work is the culmination of a physics masters project by George FitzGerald (gwfitzg@hotmail.com) at [Durham University's Department of Physics](https://www.durham.ac.uk/departments/academic/physics/).
 
@@ -77,10 +77,10 @@ The features of QSTToolkit are organised into two main subpackages, `qsttoolkit.
 import qsttoolkit as qst
 ```
 ```python
-cat_batch = qst.data.CatStates(n_states = 1000, N = dim, alpha_magnitude_range = [0, 10])
+cat_batch = qst.data.CatStates(n_states=1000, dim=32, alpha_magnitude_range=[0, 10])
 ```
 ```python
-MLE_reconstructor = qst.tomography.MLEQuantumStateTomography(dim)
+MLE_reconstructor = qst.tomography.MLEQuantumStateTomography()
 ```
 ```python
 print(qst.fidelity(test_state.full(), MLE_reconstructor.reconstructed_dm))
@@ -91,24 +91,24 @@ However, **all public classes and functions in QSTToolkit can also be called dir
 ```python
 import qsttoolkit as qst
 
-cat_batch = qst.CatStates(n_states = 1000, N = dim, alpha_magnitude_range = [0, 10])
+cat_batch = CatStates(n_states=1000, dim=32, alpha_magnitude_range=[0, 10])
 ```
 
 ### Synthetic Data Generation (`qsttoolkit.data`)
 
-QSTToolkit provides an expansion to the existing [QuTiP](https://qutip.org/docs/4.0.2/index.html) framework for producing synthetic state vectors and density matrices (generally in the form of [NumPy arrays](https://numpy.org/doc/2.1/reference/generated/numpy.array.html)) for optical quantum states, with a specific focus on producing realistic data suitable for training deep learning quantum state discrimination and tomography models. On top of [Fock](https://en.wikipedia.org/wiki/Fock_state), [coherent](https://en.wikipedia.org/wiki/Coherent_state), thermal and random states which can be produced directly using [QuTiP functions](https://qutip.org/docs/4.0.2/apidoc/functions.html), QSTToolkit provides functions for synthesizing specific useful superpositions of Fock and coherent states. The custom states currently provided are:
-- Num states [[1]](#references): `data.states.num_state()`
-- Binomial states [[1]](#references): `data.states.binomial_state()`
-- [Cat states](https://en.wikipedia.org/wiki/Cat_state): `data.states.cat_state()`
-- Gottesman-Kitaev-Preskill (GKP) states [[2]](#references): `data.states.gkp_state()`
+QSTToolkit provides an expansion to the existing [QuTiP](https://qutip.org/docs/4.0.2/index.html) framework for producing synthetic state vectors and density matrices for optical quantum states, with a specific focus on producing realistic data suitable for training deep learning quantum state discrimination and tomography models. On top of [Fock](https://en.wikipedia.org/wiki/Fock_state), [coherent](https://en.wikipedia.org/wiki/Coherent_state), thermal and random states which can be produced directly using [QuTiP functions](https://qutip.org/docs/4.0.2/apidoc/functions.html), QSTToolkit provides functions for synthesizing specific useful superpositions of Fock and coherent states. The custom states currently provided are:
+- Num states [[1]](#references): `data.states.num_state()` and `data.states.num_dm()`
+- Binomial states [[1]](#references): `data.states.binomial_state()` and `data.states.binomial_dm()`
+- [Cat states](https://en.wikipedia.org/wiki/Cat_state): `data.states.cat_state()` and `data.states.cat_dm()`
+- Gottesman-Kitaev-Preskill (GKP) states [[2]](#references): `data.states.gkp_state()` and `data.states.gkp_dm()`
 
-These states can be produced individually, in batches of specified size with randomised state parameters, or in specific preset datasets, intended to be standard datasets for modelling. States can be produced as pure states, or with some mixing applied to the density matrix. Measurement data is generated for direct photon occupation number measurement, or a Husimi-Q function as a result of a displace-and-measure technique [[3]](#references). Different sources of noise can be applied to the image data for the latter at customisable levels.
+These states can be produced individually, in batches of specified size with randomized state parameters, or in specific preset datasets, intended to be standard datasets for modelling. States can be produced as pure states, or with some mixing applied to the density matrix. Measurement data is generated for direct photon occupation number measurement, or a Husimi Q function as a result of a displace-and-measure technique [[3]](#references). Different sources of noise can be applied to the image data for the latter at customisable levels.
 
 Support for more states, measurement regimes and noise sources are planned for development. To request any specific features that might be useful for your work, please contact George FitzGerald at (gwfitzg@hotmail.com).
 
 ### Quantum State Tomography (`qsttoolkit.tomography`)
 
-QSTToolkit currently provides classes to compile and train/optimise four models:
+QSTToolkit currently provides classes to compile and train/optimize four models:
 
 - [Convolutional neural network (CNN)](https://en.wikipedia.org/wiki/Convolutional_neural_network) powered quantum state discrimination [[3]](#references): `tomography.dlqst.CNNQuantumStateDiscrimination`
 - [Maximum likelihood estimation (MLE)](https://en.wikipedia.org/wiki/Maximum_likelihood_estimation) based quantum state tomography: `tomography.tradqst.MLEQuantumStateTomography`
@@ -119,14 +119,14 @@ The usage of each class varies depending on the model's composition and function
 
 ## Dependencies
 
-- numpy 1.26.4
-- scipy 1.13.1
+- numpy 2.0.2
+- scipy 1.14.1
 - pandas 2.2.2
 - matplotlib 3.10.0
 - seaborn 0.13.2
 - qutip 5.1.1
-- scikit-learn 1.6.0
-- tensorflow 2.17.1
+- scikit-learn 1.6.1
+- tensorflow 2.18.0
 
 ## Directory Structure
 
@@ -144,7 +144,10 @@ qsttoolkit/
 │   ├── __init__.py
 │   ├── tradqst/
 │   │   ├── __init__.py
-│   │   └── MLE.py
+│   │   └── MLE_reconstructor/
+│   │       ├── __init__.py
+│   │       ├── model.py
+│   │       └── train.py
 │   ├── dlqst/
 │   │   ├── __init__.py
 │   │   ├── CNN_classifier/
@@ -174,9 +177,11 @@ qsttoolkit/
 ## Future Development
 
 Planned new features coming soon:
-- More traditional QST methods (Linear Inversion, Bayesian Inference, Compressed Sensing)
-- More deep learning quantum state analyses (autoencoder, restricted Boltzmann machine (RBM))
-- Generalisation to qubit tomography
+- More traditional QST methods (linear inversion, Bayesian inference, compressed sensing, gradient descent-based).
+- More deep learning QST models (autoencoder, restricted Boltzmann machine (RBM)).
+- Introduction of a 'QST Sandbox' where different components of existing models can be combined to create new approaches, and performance can be analysed across system dimensions and noise levels.
+- Modelling using real experimental optical quantum state data, accompanied by expanded noise simulation.
+- Generalization to qubit tomography.
 
 ## License
 
@@ -189,20 +194,11 @@ For more details, see the [LICENSE](LICENSE) file.
 
 ## Contributing
 
-Contributions are welcome! Please open an issue or submit a pull request for any feature requests, improvements, or bug fixes.
-
-To contribute:
-- Fork the repository.
-- Create a new branch (git checkout -b feature-branch).
-- Commit your changes (git commit -m 'Add new feature').
-- Push to the branch (git push origin feature-branch).
-- Open a pull request.
-
-For any other questions, please contact me at gwfitzg@hotmail.com
+Contributions are welcome! Please open an issue or submit a pull request for any feature requests, improvements, or bug fixes. For any other questions, please contact me at gwfitzg@hotmail.com
 
 ## References
 
-References to key papers that inspired this package:
+Key papers that inspired this work:
 
 1. M. H. Michael et al., *New Class of Quantum Error-Correcting Codes for a Bosonic Mode* (2016), https://doi.org/10.1103/PhysRevX.6.031006
 2. D. Gottesman, A. Kitaev and J. Preskill, *Encoding a qubit in an oscillator* (2001), https://doi.org/10.1103/PhysRevA.64.012310
