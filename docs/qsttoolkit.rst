@@ -1,5 +1,5 @@
 =========================
-QSTToolkit package v1.0.0
+QSTToolkit package v1.1.0
 =========================
 
 Subpackages

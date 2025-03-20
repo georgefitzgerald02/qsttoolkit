@@ -1,6 +1,6 @@
-================================================================
-Multitask Regression/Classification Network State Reconstruction
-================================================================
+========================================================================
+Multitask Regression/Classification Network Quantum State Reconstruction
+========================================================================
 
 Multitask regression/classification network-based quantum state reconstruction as proposed by Luu et al. (2024) [3].
 

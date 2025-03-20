@@ -1,6 +1,6 @@
-================================
-CNN Quantum State Discrimination
-================================
+===============================================================
+Convolutional Neural Network (CNN) Quantum State Discrimination
+===============================================================
 
 Convolutional Neural Network-based quantum state discrimination as proposed by Ahmed et al. (2021) [1].
 

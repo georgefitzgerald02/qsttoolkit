@@ -12,7 +12,7 @@ Traditional quantum state tomography is implemented using Maximum Likelihood Est
 .. toctree::
    :maxdepth: 2
 
-   qsttoolkit.tomography.tradqst.MLE
+   qsttoolkit.tomography.tradqst.MLE_reconstructor
 
 Deep Learning QST
 =================

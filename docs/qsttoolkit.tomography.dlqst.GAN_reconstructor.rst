@@ -1,6 +1,6 @@
-===============================================
-Generative Adversarial Network State Tomography
-===============================================
+=============================================================
+Generative Adversarial Network (GAN) Quantum State Tomography
+=============================================================
 
 Generative Adversarial Network-based quantum state tomography as proposed by Ahmed et al. (2021) [2].
 
