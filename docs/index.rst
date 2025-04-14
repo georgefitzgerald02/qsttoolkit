@@ -2,10 +2,6 @@
 QSTToolkit Documentation
 ========================
 
-.. image:: https://github.com/georgefitzgerald02/qsttoolkit/images/logo.png
-  :width: 400
-  :alt: QSTToolkit logo
-
 QSTToolkit is an open-source package for performing optical quantum state tomography (QST) research using both traditional statistical and novel deep learning-powered methods in Python. Key functionality includes:
 
    * Fast, compute-efficient and customisable generation of realistic synthetic data for a variety of optical quantum states using the `QuTiP <https://qutip.org/index.html>`_ package.

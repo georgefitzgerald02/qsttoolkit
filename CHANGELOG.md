@@ -20,7 +20,7 @@ The format of this Changelog is based on [Keep a Changelog](https://keepachangel
 - Default mean value for additive Gaussian noise in `apply_measurement_noise()` is now 0.0, to better model error from finite measurements and discrete (binned) measurement pixels for Husimi Q data.
 - Default standard deviation for additive Gaussian noise in `optical_state_dataset()` and example notebooks is now 0.01.
 - Updated example notebook cell outputs to reflect changes.
-- Improvements to page intro text in documentation (including the QSTToolkit logo).
+- Improvements to page intro text in documentation.
 
 ### Fixed
 
