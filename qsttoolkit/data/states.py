@@ -162,11 +162,12 @@ def gkp_state(dim: int, n1_range: list[int, int], n2_range: list[int, int], delt
     _range_error(n1_range, integers=True, positive=False)
     _range_error(n2_range, integers=True, positive=False)
     # if not isinstance(mu, int): raise TypeError("mu must be an integer.")             Ignored for now, may be reintroduced in a future version
+    
+    grid = np.mgrid[n1_range[0]:n1_range[1]+1, n2_range[0]:n2_range[1]+1].reshape(2, -1)
+    alphas = np.sqrt(np.pi/2) * ((2 * grid[0] + mu) + 1j * grid[1])
+    weights = np.exp(-delta**2 * np.abs(alphas)**2 - 1j * alphas.real * alphas.imag)
 
-    grid = np.array([[n1, n2] for n1 in range(n1_range[0], n1_range[1]+1) for n2 in range(n2_range[0], n2_range[1]+1)])
-    alphas = np.array([np.sqrt(np.pi/2)*((2*n1 + mu) + 1j*n2) for n1, n2 in grid])
-
-    return sum([np.exp(-delta**2 * np.abs(alpha)**2) * np.exp(-1j * alpha.real * alpha.imag) * coherent(dim, alpha) for alpha in alphas]).unit()
+    return sum(weights[i] * coherent(dim, alphas[i]) for i in range(alphas.size)).unit()
 
 
 ##### Density matrices #####

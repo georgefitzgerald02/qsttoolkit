@@ -26,18 +26,14 @@ def fidelity(rho: np.ndarray, sigma: np.ndarray) -> float:
         rho = rho.full()
     elif type(rho) == np.ndarray:
         pass
-    else: # elif type(rho) == tf.Tensor or type(rho) == tf.python.framework.ops.EagerTensor:
+    else:
         rho = rho.numpy()
-    # elif type(rho) != np.ndarray:
-    #     raise ValueError(f"unrecognised data type for rho: {type(rho)}")
     if type(sigma) == Qobj:
         sigma = sigma.full()
     elif type(sigma) == np.ndarray:
         pass
-    else: # elif type(sigma) == tf.Tensor or type(sigma) == tf.python.framework.ops.EagerTensor:
+    else:
         sigma = sigma.numpy()
-    # elif type(sigma) != np.ndarray:
-    #     raise ValueError(f"unrecognised data type for sigma: {type(sigma)}")
     
     sqrt_sigma = sqrtm(sigma)
     return np.real(np.trace(sqrtm(sqrt_sigma @ rho @ sqrt_sigma))**2)

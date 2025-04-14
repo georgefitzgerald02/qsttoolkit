@@ -200,7 +200,7 @@ def measurement_operators(dim: int, measurement_type: str, **kwargs) -> np.array
         for n in range(dim):
             E.append(np.outer(fock(dim, n).full(), fock(dim, n).full().conj().T))
     else:
-        raise ValueError(f"Measurement type {measurement_type} not recognised.")
+        raise ValueError(f"Measurement type {measurement_type} not recognized.")
     return np.array(E)
 
 
@@ -322,7 +322,7 @@ class QuantumStateTomography:
         elif type(true_dm) == tf.Tensor:
             true_dm = true_dm.numpy()
         elif type(true_dm) != np.ndarray:
-            raise ValueError("unrecognised data type for true_dm.")
+            raise ValueError("unrecognized data type for true_dm.")
 
         _, axs = plt.subplots(1, 2, figsize=(10, 5))
         plot_Hinton(true_dm, ax=axs[0], label='true density matrix')

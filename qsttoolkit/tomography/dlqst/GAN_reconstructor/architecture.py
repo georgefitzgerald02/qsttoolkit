@@ -57,7 +57,7 @@ class CholeskyLowerTriangular(layers.Layer):
 
 ##### Model architecture functions #####
 
-def build_generator(data_vector_input_shape: tuple, noise_parameters_input_shape: list=[]) -> tf.keras.Model:
+def build_generator(data_vector_input_shape: tuple) -> tf.keras.Model:
     """
     Builds the generator to reconstruct a density matrix Cholesky decomposition from measurement data vectors.
 
@@ -74,10 +74,6 @@ def build_generator(data_vector_input_shape: tuple, noise_parameters_input_shape
         Generator model.
     """
     data_vector_input = layers.Input(shape=data_vector_input_shape, name='data_vector_input')
-    inputs = [data_vector_input]
-    if noise_parameters_input_shape:
-        noise_parameters_input = layers.Input(shape=noise_parameters_input_shape, name='noise_parameters_input')
-        inputs.append(noise_parameters_input)
 
     x = layers.Dense(512)(data_vector_input)
     x = layers.LeakyReLU()(x)
@@ -98,7 +94,7 @@ def build_generator(data_vector_input_shape: tuple, noise_parameters_input_shape
     x = layers.Conv2DTranspose(2, 4, 1, padding='same')(x)
     lower_triangular = CholeskyLowerTriangular()(x)
 
-    return Model(inputs=inputs, outputs=lower_triangular)
+    return Model(inputs=data_vector_input, outputs=lower_triangular)
 
 def build_discriminator(data_vector_input_shape: tuple) -> tf.keras.Model:
     """

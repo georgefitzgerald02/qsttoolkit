@@ -5,7 +5,7 @@ QSTToolkit is an open-source Python library for performing optical quantum state
 - Maximum Likelihood Estimation quantum state tomography.
 - A variety of deep learning powered methods for quantum state discrimination and tomography.
 
-The key aim of QSTToolkit is to create a standard framework for researching, designing and comparing methods for quantum state tomography in noisy, high-dimensional, continuous quantum systems. Recently proposed models are implemeted, using standardized synthetic data to allow for fully valid comparison between approaches.
+The key aim of QSTToolkit is to create a standard framework for researching, designing and comparing methods for quantum state tomography in noisy, high-dimensional, continuous quantum systems. Recently proposed models are implemeted, using standardized synthetic data allowing for fully valid comparison between approaches. A pre-print introducing QSTToolkit and its functionality is [available on arXiv](https://arxiv.org/abs/2503.14422).
 
 This work is the culmination of a physics masters project by George FitzGerald (gwfitzg@hotmail.com) at [Durham University's Department of Physics](https://www.durham.ac.uk/departments/academic/physics/).
 
@@ -194,7 +194,7 @@ For more details, see the [LICENSE](LICENSE) file.
 
 ## Contributing
 
-Contributions are welcome! Please open an issue or submit a pull request for any feature requests, improvements, or bug fixes. For any other questions, please contact me at gwfitzg@hotmail.com
+Contributions are welcome! Please open an issue or submit a pull request for any feature requests, improvements, or bug fixes. For any other questions, please contact me at gwfitzg@hotmail.com.
 
 ## References
 

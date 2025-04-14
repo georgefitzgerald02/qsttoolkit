@@ -25,12 +25,12 @@ def mixed_state_noise(density_matrix: Qobj, noise_level: float=0.1) -> np.ndarra
     """
     if type(density_matrix) == np.ndarray:
         density_matrix = Qobj(density_matrix)
-    elif type(density_matrix) == tf.Tensor:
-        density_matrix = Qobj(density_matrix.numpy())
-    elif type(density_matrix) != Qobj:
-        raise ValueError("unrecognised data type for density_matrix.")
+    elif type(density_matrix) == Qobj:
+        pass
+    else:
+        raise ValueError("unrecognized data type for density_matrix.")
     if noise_level < 0 or noise_level > 1:
-        raise ValueError("noise_level must be between 0 and 1.")
+        raise ValueError("noise_level must be a float between 0 and 1.")
 
     return (1 - noise_level) * density_matrix + noise_level * rand_dm(density_matrix.shape[0])
 
@@ -50,6 +50,11 @@ def gaussian_convolution(Q_function: np.ndarray, variance: float) -> np.ndarray:
     np.ndarray
         Q-function image after convolution.
     """
+    if type(Q_function) != np.ndarray:
+        raise ValueError("unrecognized data type for Q_function, expected np.ndarray.")
+    if variance < 0:
+        raise ValueError("variance must be a positive float.")
+
     return gaussian_filter(Q_function, sigma=variance)
 
 
@@ -75,6 +80,9 @@ def affine_transformation(image: np.ndarray, theta: float, x: float, y: float) -
     np.ndarray
         Transformed image.
     """
+    if type(image) != np.ndarray:
+        raise ValueError("unrecognized data type for Q_function, expected np.ndarray.")
+
     theta = np.random.uniform(-theta, theta)
     x = np.random.uniform(-x, x)
     y = np.random.uniform(-y, y)
@@ -98,6 +106,11 @@ def additive_gaussian_noise(image: np.ndarray, mean: float, std: float) -> np.nd
     np.ndarray
         Image with Gaussian noise added.
     """
+    if type(image) != np.ndarray:
+        raise ValueError("unrecognized data type for Q_function, expected np.ndarray.")
+    if std < 0:
+        raise ValueError("std must be a positive float.")
+
     noise = np.random.normal(mean, std, image.shape)
     image = image + noise
     image[image < 0] = 0
@@ -121,12 +134,18 @@ def salt_and_pepper_noise(image: np.ndarray, pepper_p: float, salt_p: float=0.0,
     np.ndarray
         Image with salt-and-pepper noise added.
     """
+    if type(image) != np.ndarray:
+        raise ValueError("unrecognized data type for Q_function, expected np.ndarray.")
     if not pepper_p and pepper_p != 0:
         if prob:
             pepper_p = prob
             warnings.warn("prob is deprecated and will be removed in a future version. Please use salt_p and pepper_p instead.", DeprecationWarning, stacklevel=2)
         else:
             raise ValueError("pepper_p must be specified.")
+    if salt_p < 0 or salt_p > 1:
+        raise ValueError("salt_p must be a float between 0 and 1.")
+    if pepper_p < 0 or pepper_p > 1:
+        raise ValueError("pepper_p must be a float between 0 and 1.")
 
     noise1 = np.random.rand(*image.shape)
     image[noise1 < salt_p] = 1
@@ -163,6 +182,8 @@ def apply_measurement_noise(image: np.ndarray, affine_theta: float, affine_x: fl
     np.ndarray
         Image with all types of noise added.
     """
+    if type(image) != np.ndarray:
+        raise ValueError("unrecognized data type for Q_function, expected np.ndarray.")
     if not pepper_p and pepper_p != 0:
         if salt_and_pepper_prob:
             pepper_p = salt_and_pepper_prob
@@ -176,6 +197,6 @@ def apply_measurement_noise(image: np.ndarray, affine_theta: float, affine_x: fl
                                   affine_theta,
                                   affine_x,
                                   affine_y),
-            np.mean(image),
+            0.0,
             additive_Gaussian_stddev),
         pepper_p, salt_p)

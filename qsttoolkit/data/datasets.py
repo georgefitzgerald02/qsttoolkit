@@ -7,7 +7,7 @@ from qsttoolkit.data.state_batches import FockStates, CoherentStates, ThermalSta
 from qsttoolkit.data.noise import mixed_state_noise, gaussian_convolution, apply_measurement_noise
 
 
-def optical_state_dataset(dim: int, data_dim: int=None, state_numbers: list=[1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000], mixed_state_noise_level: float=0.2, Gaussian_conv_ntherm: float=2.0, affine_theta: float=20.0, affine_x: float=0.1, affine_y: float=0.1, additive_Gaussian_stddev: float=0.001, pepper_p: float=0.01, salt_p: float=0.0, latent_dim=None, mixed_state_noise_noise_level=None) -> pd.DataFrame:
+def optical_state_dataset(dim: int, data_dim: int=None, state_numbers: list=[1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000], mixed_state_noise_level: float=0.2, Gaussian_conv_ntherm: float=2.0, affine_theta: float=20.0, affine_x: float=0.1, affine_y: float=0.1, additive_Gaussian_stddev: float=0.01, pepper_p: float=0.01, salt_p: float=0.0, latent_dim=None, mixed_state_noise_noise_level=None) -> pd.DataFrame:
     """
     Generates a standardized dataset of optical quantum states with added noise for training machine learning quantum state discrimination and tomography models.
     
@@ -30,7 +30,7 @@ def optical_state_dataset(dim: int, data_dim: int=None, state_numbers: list=[100
     affine_y : float
         Maximum translation in the y direction. Defaults to 0.1.
     additive_Gaussian_stddev : float
-        Standard deviation of the Gaussian distribution from which additive noise is sampled. Defaults to 0.001.
+        Standard deviation of the Gaussian distribution from which additive noise is sampled. Defaults to 0.01.
     salt_p : float
         Proportion of pixels to set to 1. Defaults to 0.0.
     pepper_p : float
@@ -66,31 +66,38 @@ def optical_state_dataset(dim: int, data_dim: int=None, state_numbers: list=[100
     fock_batch = FockStates(n_states = state_numbers[0],
                             dim = dim,
                             n_range = [0, dim])
+    print("Fock states generated")
     coherent_batch = CoherentStates(n_states = state_numbers[1],
                                     dim = dim,
                                     alpha_magnitude_range = [1e-6, 3])
+    print("Coherent states generated")
     thermal_batch = ThermalStates(n_states = state_numbers[2],
                                   dim = dim,
                                   nbar_range = [0, dim])
+    print("Thermal states generated")
     num_batch = NumStates(n_states = state_numbers[3],
                           dim = dim,
                           types = ['17', 'M', 'P', 'P2', 'M2'])
+    print("Num states generated")
     binomial_batch = BinomialStates(n_states = state_numbers[4],
                                     dim = dim,
                                     S_range = [1, 10],
                                     mu_range = [0, 2])
+    print("Binomial states generated")
     cat_batch = CatStates(n_states = state_numbers[5],
                           dim = dim,
                           alpha_magnitude_range = [0, 10])
+    print("Cat states generated")
     gkp_batch = GKPStates(n_states = state_numbers[6],
                           dim = dim,
                           n1_range = [-20, 20],
                             n2_range = [-20, 20],
                             delta_range=[0.2, 0.5],
                             mu_range=[0, 2])
+    print("GKP states generated")
     random_batch = RandomStates(n_states = state_numbers[7],
                                 dim = dim)
-    print('States generated')
+    print("Random states generated")
 
     # Create phase space grid
     xgrid = np.linspace(-5, 5, data_dim)

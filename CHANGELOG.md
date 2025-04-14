@@ -3,8 +3,28 @@
 The format of this Changelog is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). QSTToolkit adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html). Please see the official [documentation](https://qsttoolkit.readthedocs.io/en/latest/) for full details of all features.
 
 ## Contents
+- [1.1.1](#v111---2025-04-14)
 - [1.1.0](#v110---2025-03-19)
 - [1.0.0](#v100---2025-01-22)
+
+## v1.1.1 - 2025-04-14
+
+### Added
+
+- Improved error handling in `qsttoolkit.quantum`, `qsttoolkit.tomography.QST` and `qsttoolkit.data.noise`.
+- `optical_state_dataset()` now verbose during state initialization, as well as data generation.
+
+### Changed
+
+- More efficient synthesis of GKP states using `numpy.mgrid()`.
+- Default mean value for additive Gaussian noise in `apply_measurement_noise()` is now 0.0, to better model error from finite measurements and discrete (binned) measurement pixels for Husimi Q data.
+- Default standard deviation for additive Gaussian noise in `optical_state_dataset()` and example notebooks is now 0.01.
+- Updated example notebook cell outputs to reflect changes.
+- Improvements to page intro text in documentation (including the QSTToolkit logo).
+
+### Fixed
+
+- Fixed an error in the GAN model's `build_generator()` function arising due to redundant function arguments for controlling the level of noise in the architecture.
 
 ## v1.1.0 - 2025-03-20
 
