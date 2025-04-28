@@ -17,7 +17,7 @@ def train(generator: tf.keras.Model, discriminator: tf.keras.Model, measurement_
         Discriminator network.
     measurement_data : list of np.ndarray
         Frequency of each measurement outcome.
-    measurement_operators : list of np.ndarray
+    measurement_operators : list of Qobj
         Projective operators corresponding to the measurement outcomes.
     epochs : int
         Number of epochs to train for. Defaults to 100.
@@ -77,6 +77,7 @@ def train(generator: tf.keras.Model, discriminator: tf.keras.Model, measurement_
 
             # Expectation values
             generated_measurements = expectation(generated_dm, measurement_operators)
+            generated_measurements /= tf.reduce_sum(generated_measurements)  # Normalize to 1
 
             # Discriminator outputs
             reconstructed_preds = discriminator(generated_measurements)  # Reconstructed data vector probability

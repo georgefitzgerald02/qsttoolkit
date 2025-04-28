@@ -1,6 +1,7 @@
 import numpy as np
 import cmath
 import random
+import warnings
 import tensorflow as tf
 
 
@@ -36,6 +37,14 @@ def _subplot_figsize(n_subplots: int, subplot_width: int=5, max_h_subplots: int=
     return (width, height)
         
 
+##### Quantum #####
+
+def _estimate_min_nsteps(resonator_frequency, tau, loss_rate, N=50, M=10):
+    steps_oscillation = N * tau * resonator_frequency / (2 * np.pi)
+    steps_decay = M * tau * loss_rate
+    return int(np.ceil(max(steps_oscillation, steps_decay)))
+
+
 ##### Regularisation #####
 
 def _L1_regularisation(weights: tf.Tensor, L1_reg: float) -> tf.Tensor:
@@ -63,3 +72,16 @@ def _range_error(magnitude_range: list[float, float], integers: bool=False, posi
     if integers:
         if not float(magnitude_range[0]).is_integer() or not float(magnitude_range[1]).is_integer():
             raise ValueError("min and max magnitudes must be integers")
+        
+
+##### Deprecation warnings #####
+
+def _deprecation_warning(old_name: str, new_name: str):
+    """Raises a deprecation warning."""
+    warnings.simplefilter('always', DeprecationWarning)
+    warnings.warn(f"'{old_name}' is deprecated and will be removed in a future version. Please use '{new_name}' instead.", DeprecationWarning, stacklevel=2)
+
+def _no_longer_required_warning(old_name: str):
+    """Raises a no longer required warning."""
+    warnings.simplefilter('always', DeprecationWarning)
+    warnings.warn(f"'{old_name}' is no longer required and will be removed in a future version.", DeprecationWarning, stacklevel=2)

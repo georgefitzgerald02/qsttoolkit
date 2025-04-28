@@ -1,7 +1,7 @@
 # QSTToolkit
 
 QSTToolkit is an open-source Python library for performing optical quantum state tomography (QST) using both traditional statistical and novel deep learning-powered methods. Key functionality includes:
-- Fast, compute-efficient and customisable generation of realistic synthetic data for a variety of optical quantum states using the [QuTiP](https://qutip.org/docs/4.0.2/index.html) package.
+- Fast, compute-efficient and customisable generation of realistic synthetic data for a variety of quantum states using the [QuTiP](https://qutip.org/docs/4.0.2/index.html) package.
 - Maximum Likelihood Estimation quantum state tomography.
 - A variety of deep learning powered methods for quantum state discrimination and tomography.
 
@@ -102,7 +102,7 @@ QSTToolkit provides an expansion to the existing [QuTiP](https://qutip.org/docs/
 - [Cat states](https://en.wikipedia.org/wiki/Cat_state): `data.states.cat_state()` and `data.states.cat_dm()`
 - Gottesman-Kitaev-Preskill (GKP) states [[2]](#references): `data.states.gkp_state()` and `data.states.gkp_dm()`
 
-These states can be produced individually, in batches of specified size with randomized state parameters, or in specific preset datasets, intended to be standard datasets for modelling. States can be produced as pure states, or with some mixing applied to the density matrix. Measurement data is generated for direct photon occupation number measurement, or a Husimi Q function as a result of a displace-and-measure technique [[3]](#references). Different sources of noise can be applied to the image data for the latter at customisable levels.
+These states can be produced individually, in batches of specified size with randomized state parameters, or in specific preset datasets, intended to be standard datasets for modelling. States can be produced as pure states, or with some mixing applied to the density matrix. Measurement data is generated for direct photon occupation number measurement, heterodyne [[3]](#references) and homodyne [[4]](#references) detection, and displaced-parity measurements [[5]](#references) of quantum states. Different sources of noise can be applied to the image data for the latter at customisable levels.
 
 Support for more states, measurement regimes and noise sources are planned for development. To request any specific features that might be useful for your work, please contact George FitzGerald at (gwfitzg@hotmail.com).
 
@@ -110,10 +110,12 @@ Support for more states, measurement regimes and noise sources are planned for d
 
 QSTToolkit currently provides classes to compile and train/optimize four models:
 
-- [Convolutional neural network (CNN)](https://en.wikipedia.org/wiki/Convolutional_neural_network) powered quantum state discrimination [[3]](#references): `tomography.dlqst.CNNQuantumStateDiscrimination`
+- [Convolutional neural network (CNN)](https://en.wikipedia.org/wiki/Convolutional_neural_network) powered quantum state discrimination [[6]](#references): `tomography.dlqst.CNNQuantumStateDiscrimination`
 - [Maximum likelihood estimation (MLE)](https://en.wikipedia.org/wiki/Maximum_likelihood_estimation) based quantum state tomography: `tomography.tradqst.MLEQuantumStateTomography`
-- [Generative adversarial network (GAN)](https://en.wikipedia.org/wiki/Generative_adversarial_network) quantum state tomography [[4]](#references): `tomography.dlqst.GANQuantumStateTomography`
-- [Multitasking](https://en.wikipedia.org/wiki/Multi-task_learning) classification/regression network quantum state characterisation [[5]](#references): `tomography.dlqst.MultitaskQuantumStateTomography`
+- [Generative adversarial network (GAN)](https://en.wikipedia.org/wiki/Generative_adversarial_network) quantum state tomography [[7]](#references): `tomography.dlqst.GANQuantumStateTomography`
+- [Multitasking](https://en.wikipedia.org/wiki/Multi-task_learning) classification/regression network quantum state characterisation [[8]](#references): `tomography.dlqst.MultitaskQuantumStateTomography`
+
+Additionally, QSTToolkit provides the `CustomQuantumStateTomography` class for combining components of existing QST models in a modular, 'drag-and-drop' sandbox environment.
 
 The usage of each class varies depending on the model's composition and functionality. The `/example_notebooks` directory contains example Jupyter notebooks which run through the usage of each model, with example synthetic data preparation for the model's specific use case.
 
@@ -178,8 +180,8 @@ qsttoolkit/
 
 Planned new features coming soon:
 - More traditional QST methods (linear inversion, Bayesian inference, compressed sensing, gradient descent-based).
-- More deep learning QST models (autoencoder, restricted Boltzmann machine (RBM)).
-- Introduction of a 'QST Sandbox' where different components of existing models can be combined to create new approaches, and performance can be analysed across system dimensions and noise levels.
+- More deep learning QST models (e.g. restricted Boltzmann machines (RBM)).
+- More available parametrizations of the density matrix for tomography.
 - Modelling using real experimental optical quantum state data, accompanied by expanded noise simulation.
 - Generalization to qubit tomography.
 
@@ -202,6 +204,9 @@ Key papers that inspired this work:
 
 1. M. H. Michael et al., *New Class of Quantum Error-Correcting Codes for a Bosonic Mode* (2016), https://doi.org/10.1103/PhysRevX.6.031006
 2. D. Gottesman, A. Kitaev and J. Preskill, *Encoding a qubit in an oscillator* (2001), https://doi.org/10.1103/PhysRevA.64.012310
-3. S. Ahmed, C. Sánchez Muñoz, F. Nori, and A. F. Kockum, *Classification and reconstruction of optical quantum states with deep neural networks* (2021), https://doi.org/10.1103/PhysRevResearch.3.033278
-4. S. Ahmed, C. S. Muñoz, F. Nori, and A. F. Kockum, *Quantum State Tomography with Conditional Generative Adversarial Networks* (2021), https://doi.org/10.1103/PhysRevLett.127.140502
-5.  N. T. Luu, T. C. Truong, and D. T. Luu, *Universal quantum tomography with deep neural networks* (2024), https://doi.org/10.48550/arXiv.2407.01734
+3. S. Stenholm, *Simultaneous measurement of conjugate variables* (1992), https://doi.org/10.1016/0003-4916(92)90086-2
+4. C. R. Muller et al., *Evading Vacuum Noise: Wigner Projections or Husimi Samples?* (2016), https://doi.org/10.48550/arXiv.1604.07692
+5. K. Banaszek, C. Radzewicz, and K. Wodkiewicz, *Direct measurement of the Wigner function by photon counting* (2024), https://doi.org/10.48550/arXiv.quant-ph/9903027
+6. S. Ahmed, C. Sánchez Muñoz, F. Nori, and A. F. Kockum, *Classification and reconstruction of optical quantum states with deep neural networks* (2021), https://doi.org/10.1103/PhysRevResearch.3.033278
+7. S. Ahmed, C. S. Muñoz, F. Nori, and A. F. Kockum, *Quantum State Tomography with Conditional Generative Adversarial Networks* (2021), https://doi.org/10.1103/PhysRevLett.127.140502
+8. N. T. Luu, T. C. Truong, and D. T. Luu, *Universal quantum tomography with deep neural networks* (2024), https://doi.org/10.48550/arXiv.2407.01734

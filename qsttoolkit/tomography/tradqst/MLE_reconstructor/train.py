@@ -5,7 +5,6 @@ from qsttoolkit.tomography.QST import reconstruct_density_matrix, log_likelihood
 from qsttoolkit.quantum import fidelity
 
 
-@tf.function
 def train_step(params: tf.Variable, measurement_data: list, measurement_operators: list, optimizer: tf.keras.optimizers.Optimizer, L1_reg: float=0.0):
     """
     Performs one optimization step using gradient descent.
@@ -16,7 +15,7 @@ def train_step(params: tf.Variable, measurement_data: list, measurement_operator
         Trainable parametrization of the density matrix.
     measurement_data : list of np.ndarray
         Frequency of each measurement outcome.
-    measurement_operators : list of np.ndarray
+    measurement_operators : list of Qobj
         Projective operators corresponding to the measurement outcomes.
     optimizer : tf.keras.optimizers.Optimizer
         Optimizer to use for the reconstruction.
@@ -42,7 +41,7 @@ def train(params: tf.Variable, measurement_data: list, measurement_operators: li
         Trainable parametrization of the density matrix.
     measurement_data : list of np.ndarray
         Frequency of each measurement outcome.
-    measurement_operators : list of np.ndarray
+    measurement_operators : list of Qobj
         Projective operators corresponding to the measurement outcomes.
     epochs : int
         Number of optimization epochs. Defaults to 100.

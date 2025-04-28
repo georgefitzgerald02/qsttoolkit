@@ -6,7 +6,7 @@ with open("README.md", "r") as fh:
 
 setup(
     name="qsttoolkit", 
-    version="1.1.1", 
+    version="1.2.0", 
     description="The definitive, open-source package for performing optical quantum state tomography using both traditional (statistical) and novel deep learning-powered methods in Python.", 
     long_description=long_description, 
     long_description_content_type="text/markdown", 

@@ -1,11 +1,11 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import tensorflow as tf
-import warnings
 
 from qsttoolkit.tomography.QST import QuantumStateTomography, reconstruct_density_matrix
 from qsttoolkit.tomography.dlqst.GAN_reconstructor.architecture import build_generator, build_discriminator
 from qsttoolkit.tomography.dlqst.GAN_reconstructor.train import train
+from qsttoolkit.utils import _deprecation_warning, _no_longer_required_warning
 
 
 class GANQuantumStateTomography(QuantumStateTomography):
@@ -18,10 +18,10 @@ class GANQuantumStateTomography(QuantumStateTomography):
         Dimensions of the data vector.
     """
     def __init__(self, data_dim: int=None, latent_dim=None, dim=None):
-        if dim: warnings.warn("dim is no longer required for this class and will be removed in a future version.", DeprecationWarning, stacklevel=2)
+        if dim: _no_longer_required_warning('dim')
         if data_dim is None:
             if latent_dim is not None:
-                warnings.warn("latent_dim is deprecated and will be removed in a future version. Please use data_dim instead.", DeprecationWarning, stacklevel=2)
+                _deprecation_warning('latent_dim', 'data_dim')
                 data_dim = latent_dim
             else:
                 raise ValueError("data_dim must be specified.")
@@ -38,7 +38,7 @@ class GANQuantumStateTomography(QuantumStateTomography):
         ----------
         measurement_data : list of np.ndarray
             Frequency of each measurement outcome.
-        measurement_operators : list of np.ndarray
+        measurement_operators : list of Qobj
             Projective operators corresponding to the measurement outcomes.
         epochs : int
             Number of epochs to train for. Defaults to 100.
@@ -58,18 +58,12 @@ class GANQuantumStateTomography(QuantumStateTomography):
             Interval at which to log the time taken after each epoch. Defaults to None.
         """
         # Input error handling
-        if len(measurement_data[0]) != len(measurement_operators):
-            raise ValueError("measurement_data[0] and measurement_operators must have the same length.")
-        if not all([isinstance(data, np.ndarray) for data in measurement_data]):
-            raise ValueError("All elements of measurement_data must be numpy arrays.")
-        if not all([isinstance(op, np.ndarray) for op in measurement_operators]):
-            raise ValueError("All elements of measurement_operators must be numpy arrays.")
-        if not isinstance(verbose_interval, int) and verbose_interval is not None:
-            raise ValueError("verbose_interval must be an integer.")
-        if not isinstance(num_progress_saves, int) and num_progress_saves is not None:
-            raise ValueError("num_progress_saves must be an integer.")
-        if not isinstance(time_log_interval, int) and time_log_interval is not None:
-            raise ValueError("time_log_interval must be an integer.")
+        if len(measurement_data[0]) != len(measurement_operators): raise ValueError("measurement_data[0] and measurement_operators must have the same length.")
+        if not all([isinstance(data, np.ndarray) for data in measurement_data]): raise ValueError("All elements of measurement_data must be numpy arrays.")
+        # if not all([isinstance(op, np.ndarray) for op in measurement_operators]): raise ValueError("All elements of measurement_operators must be numpy arrays.")
+        if not isinstance(verbose_interval, int) and verbose_interval is not None: raise ValueError("verbose_interval must be an integer.")
+        if not isinstance(num_progress_saves, int) and num_progress_saves is not None: raise ValueError("num_progress_saves must be an integer.")
+        if not isinstance(time_log_interval, int) and time_log_interval is not None: raise ValueError("time_log_interval must be an integer.")
 
         self.gen_optimizer = gen_optimizer
         self.disc_optimizer = disc_optimizer

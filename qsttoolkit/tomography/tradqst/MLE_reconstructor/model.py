@@ -1,16 +1,16 @@
 import numpy as np
 from qutip import Qobj
 import tensorflow as tf
-import warnings
 
 from qsttoolkit.tomography.QST import QuantumStateTomography, parametrize_density_matrix, reconstruct_density_matrix
 from qsttoolkit.tomography.tradqst.MLE_reconstructor.train import train
+from qsttoolkit.utils import _deprecation_warning, _no_longer_required_warning
 
 
 class MLEQuantumStateTomography(QuantumStateTomography):
     """A class for performing maximum likelihood estimation quantum state tomography."""
     def __init__(self, dim=None):
-        if dim: warnings.warn("dim is no longer required for this class and will be removed in a future version.", DeprecationWarning, stacklevel=2)
+        if dim: _no_longer_required_warning('dim')
 
         super().__init__()
         self.params = tf.Variable([], dtype=tf.complex128)
@@ -23,7 +23,7 @@ class MLEQuantumStateTomography(QuantumStateTomography):
         ----------
         measurement_data : list of np.ndarray
             Frequency of each measurement outcome.
-        measurement_operators : list of np.ndarray
+        measurement_operators : list of Qobj
             Projective operators corresponding to the measurement outcomes.
         initial_dm : np.ndarray
             Initial density matrix guess.
@@ -42,23 +42,16 @@ class MLEQuantumStateTomography(QuantumStateTomography):
         time_log_interval : int
             Interval at which to log the time taken after each epoch. Defaults to None.
         """
-        if method: warnings.warn("method is deprecated and will be removed in a future version.", DeprecationWarning, stacklevel=2)
-        if verbose:
-            warnings.warn("verbose is deprecated and will be removed in a future version. Please use verbose_interval instead.", DeprecationWarning, stacklevel=2)
+        if method: _no_longer_required_warning('method')
+        if verbose: _deprecation_warning('verbose', 'verbose_interval')
 
         # Input error handling
-        if len(measurement_data[0]) != len(measurement_operators):
-            raise ValueError("measurement_data[0] and measurement_operators must have the same length.")
-        if not all([isinstance(data, np.ndarray) for data in measurement_data]):
-            raise ValueError("All elements of measurement_data must be numpy arrays.")
-        if not all([isinstance(op, np.ndarray) for op in measurement_operators]):
-            raise ValueError("All elements of measurement_operators must be numpy arrays.")
-        if not isinstance(verbose_interval, int) and verbose_interval is not None:
-            raise ValueError("verbose_interval must be an integer.")
-        if not isinstance(num_progress_saves, int) and num_progress_saves is not None:
-            raise ValueError("num_progress_saves must be an integer.")
-        if not isinstance(time_log_interval, int) and time_log_interval is not None:
-            raise ValueError("time_log_interval must be an integer.")
+        if len(measurement_data[0]) != len(measurement_operators): raise ValueError("measurement_data[0] and measurement_operators must have the same length.")
+        if not all([isinstance(data, np.ndarray) for data in measurement_data]): raise ValueError("All elements of measurement_data must be numpy arrays.")
+        # if not all([isinstance(op, np.ndarray) for op in measurement_operators]): raise ValueError("All elements of measurement_operators must be numpy arrays.")
+        if not isinstance(verbose_interval, int) and verbose_interval is not None: raise ValueError("verbose_interval must be an integer.")
+        if not isinstance(num_progress_saves, int) and num_progress_saves is not None: raise ValueError("num_progress_saves must be an integer.")
+        if not isinstance(time_log_interval, int) and time_log_interval is not None: raise ValueError("time_log_interval must be an integer.")
         
         # Ensure initial density matrix is array-like
         if type(initial_dm) == Qobj:
@@ -89,5 +82,5 @@ class MLEQuantumStateTomography(QuantumStateTomography):
 
     def plot_cost_values(self):
         """Deprecated alias for plot_losses."""
-        warnings.warn("plot_cost_values is deprecated and will be removed in a future version. Please use plot_losses instead.", DeprecationWarning, stacklevel=2)
+        _deprecation_warning('plot_cost_values', 'plot_losses')
         self.plot_losses()

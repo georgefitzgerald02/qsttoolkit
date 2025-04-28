@@ -4,9 +4,9 @@ import seaborn as sns
 import sklearn.preprocessing
 from sklearn.metrics import confusion_matrix, classification_report
 import tensorflow as tf
-import warnings
 
 from qsttoolkit.tomography.dlqst.multitask_reconstructor.architecture import build_multitask_reconstructor
+from qsttoolkit.utils import _no_longer_required_warning
 
 
 class MultitaskQuantumStateTomography:
@@ -33,7 +33,7 @@ class MultitaskQuantumStateTomography:
         Number of epochs with no improvement after which learning rate will be reduced. Defaults to 15.
     """
     def __init__(self, X_train: np.ndarray, X_test: np.ndarray, y_train: np.ndarray, y_test: np.ndarray, label_encoder: sklearn.preprocessing.LabelEncoder, early_stopping_patience: int=30, lr_scheduler_factor: float=0.5, lr_scheduler_patience: int=15, dim=None):
-        if dim: warnings.warn("dim is no longer required for this class and will be removed in a future version.", DeprecationWarning, stacklevel=2)
+        if dim: _no_longer_required_warning('dim')
         
         self.X_train = X_train
         self.X_test = X_test

@@ -3,12 +3,12 @@ import pandas as pd
 import random
 import matplotlib.pyplot as plt
 from qutip import coherent, fock, thermal_dm, ket2dm, rand_dm
-import warnings
 
 from qsttoolkit.data.states import cat_state, binomial_state, num_state
 from qsttoolkit.data.num_state_coeffs import num_state_params, num_param_to_type
 from qsttoolkit.quantum import fidelity
-from qsttoolkit.plots import plot_Hinton, plot_Husimi_Q
+from qsttoolkit.plots import plot_hinton, plot_husimi_Q, plot_wigner
+from qsttoolkit.utils import _deprecation_warning, _no_longer_required_warning
 
 
 class StateReconstructor:
@@ -38,8 +38,8 @@ class StateReconstructor:
             if true_states is None:
                 raise ValueError("missing argument: true_dms")
             else:
+                _deprecation_warning('true_states', 'true_dms')
                 true_dms = true_states
-                warnings.warn("true_states argument is deprecated. Use true_dms instead.", DeprecationWarning, stacklevel=2)
 
         self.predictions_df['true_label'] = true_labels
         self.predictions_df['predicted_label'] = predicted_labels
@@ -69,7 +69,7 @@ class StateReconstructor:
 
     def reconstruct(self, Nc=None):
         """Reconstructs the states from the restricted predicted state parameters, and stores the reconstructed states and density matrices in the self.predictions_df DataFrame."""
-        if Nc: warnings.warn("Nc is no longer required for this class and will be removed in a future version.", DeprecationWarning, stacklevel=2)
+        if Nc: _no_longer_required_warning('Nc')
         
         dim = self.predictions_df.true_dm[0].shape[0]
 
@@ -103,7 +103,7 @@ class StateReconstructor:
                 state = rand_dm(dim)       # Random initializes as a density matrix
                 self.predictions_df.loc[index, 'reconstructed_dm'] = state
 
-    def plot_comparison_Hintons(self, state_range: list[int,int]):
+    def plot_comparison_hintons(self, state_range: list[int,int]):
         """
         Plots Hinton diagrams of the true and reconstructed density matrices for a given range of states.
 
@@ -112,20 +112,23 @@ class StateReconstructor:
         state_range : list of int
             List of two integers, the minimum and maximum state indices to plot.
         """
-        # import warnings
-        # warnings.filterwarnings("ignore")
         for i in range(state_range[0], state_range[1]):
             _, axs = plt.subplots(1, 2, figsize=(13, 5))
-            plot_Hinton(self.predictions_df.true_dm[i], ax=axs[0], label=f"true state {i} (type={self.predictions_df.true_label[i]}, param={round(self.predictions_df.true_state_parameter[i], 2)})")
-            plot_Hinton(self.predictions_df.reconstructed_dm[i], ax=axs[1], label=f"reconstructed state {i} (type={self.predictions_df.predicted_label[i]}, param={round(self.predictions_df.restricted_predicted_state_parameter[i], 2)})")
+            plot_hinton(self.predictions_df.true_dm[i], ax=axs[0], label=f"true state {i} (type={self.predictions_df.true_label[i]}, param={np.round(self.predictions_df.true_state_parameter[i], 2)})")
+            plot_hinton(self.predictions_df.reconstructed_dm[i], ax=axs[1], label=f"reconstructed state {i} (type={self.predictions_df.predicted_label[i]}, param={np.round(self.predictions_df.restricted_predicted_state_parameter[i], 2)})")
             plt.show()
 
     def plot_hintons(self, state_range: list[int,int]):
-        """Deprecated alias for plot_comparison_Hintons."""
-        warnings.warn("plot_hintons is deprecated. Use plot_comparison_Hintons instead.", DeprecationWarning, stacklevel=2)
-        self.plot_comparison_Hintons(state_range)
+        """Deprecated alias for plot_comparison_hintons."""
+        _deprecation_warning('pllot_hintons', 'plot_comparison_hintons')
+        self.plot_comparison_hintons(state_range)
 
-    def plot_comparison_Husimi_Qs(self, state_range: list[int,int], xgrid: np.ndarray=None, ygrid: np.ndarray=None):
+    def plot_comparison_Hintons(self, state_range: list[int,int]):
+        """Deprecated alias for plot_comparison_hintons."""
+        _deprecation_warning('plot_comparison_Hintons', 'plot_comparison_hintons')
+        self.plot_comparison_hintons(state_range)
+
+    def plot_comparison_husimi_Qs(self, state_range: list[int,int], xgrid: np.ndarray=None, ygrid: np.ndarray=None):
         """
         Plots Husimi Q functions of the true and reconstructed states for a given range of states.
 
@@ -138,20 +141,44 @@ class StateReconstructor:
         ygrid : np.ndarray
             Grid for the imaginary part of the coherent state parameter. Defaults to np.linspace(-5, 5, 100).
         """
-        # import warnings
-        # warnings.filterwarnings("ignore")
         if xgrid is None: xgrid = np.linspace(-5, 5, 100)
         if ygrid is None: ygrid = np.linspace(-5, 5, 100)
         for i in range(state_range[0], state_range[1]):
             fig, axs = plt.subplots(1, 2, figsize=(13, 5))
-            plot_Husimi_Q(self.predictions_df.true_dm[i], xgrid, ygrid, fig, axs[0], label=f"true state {i} (type={self.predictions_df.true_label[i]}, param={round(self.predictions_df.true_state_parameter[i], 2)})")
-            plot_Husimi_Q(self.predictions_df.reconstructed_dm[i], xgrid, ygrid, fig, axs[1], label=f"reconstructed state {i} (type={self.predictions_df.predicted_label[i]}, param={round(self.predictions_df.restricted_predicted_state_parameter[i], 2)})")
+            plot_husimi_Q(self.predictions_df.true_dm[i], xgrid, ygrid, fig, axs[0], label=f"true state {i} (type={self.predictions_df.true_label[i]}, param={np.round(self.predictions_df.true_state_parameter[i], 2)})")
+            plot_husimi_Q(self.predictions_df.reconstructed_dm[i], xgrid, ygrid, fig, axs[1], label=f"reconstructed state {i} (type={self.predictions_df.predicted_label[i]}, param={np.round(self.predictions_df.restricted_predicted_state_parameter[i], 2)})")
             plt.show()
 
     def plot_Husimi_Qs(self, state_range: list[int,int], xgrid: np.ndarray=None, ygrid: np.ndarray=None):
-        """Deprecated alias for plot_comparison_Husimi_Qs."""
-        warnings.warn("plot_Husimi_Qs is deprecated. Use plot_comparison_Husimi_Qs instead.", DeprecationWarning, stacklevel=2)
-        self.plot_comparison_Husimi_Qs(state_range, xgrid, ygrid)
+        """Deprecated alias for plot_comparison_husimi_Qs."""
+        _deprecation_warning('plot_Husimi_Qs', 'plot_comparison_husimi_Qs')
+        self.plot_comparison_husimi_Qs(state_range, xgrid, ygrid)
+
+    def plot_comparison_Husimi_Qs(self, state_range: list[int,int], xgrid: np.ndarray=None, ygrid: np.ndarray=None):
+        """Deprecated alias for plot_comparison_husimi_Qs."""
+        _deprecation_warning('plot_comparison_Husimi_Qs', 'plot_comparison_husimi_Qs')
+        self.plot_comparison_husimi_Qs(state_range, xgrid, ygrid)
+
+    def plot_comparison_wigners(self, state_range: list[int,int], xgrid: np.ndarray=None, ygrid: np.ndarray=None):
+        """
+        Plots Wigner functions of the true and reconstructed states for a given range of states.
+
+        Parameters
+        ----------
+        state_range : list of int
+            List of two integers, the minimum and maximum state indices to plot.
+        xgrid : np.ndarray
+            Grid for the real part of the coherent state parameter. Defaults to np.linspace(-5, 5, 100).
+        ygrid : np.ndarray
+            Grid for the imaginary part of the coherent state parameter. Defaults to np.linspace(-5, 5, 100).
+        """
+        if xgrid is None: xgrid = np.linspace(-5, 5, 100)
+        if ygrid is None: ygrid = np.linspace(-5, 5, 100)
+        for i in range(state_range[0], state_range[1]):
+            fig, axs = plt.subplots(1, 2, figsize=(13, 5))
+            plot_wigner(self.predictions_df.true_dm[i], xgrid, ygrid, fig, axs[0], label=f"true state {i} (type={self.predictions_df.true_label[i]}, param={np.round(self.predictions_df.true_state_parameter[i], 2)})")
+            plot_wigner(self.predictions_df.reconstructed_dm[i], xgrid, ygrid, fig, axs[1], label=f"reconstructed state {i} (type={self.predictions_df.predicted_label[i]}, param={np.round(self.predictions_df.restricted_predicted_state_parameter[i], 2)})")
+            plt.show()
 
     def calculate_fidelities(self):
         """Calculates the fidelities between the true and reconstructed states, and stores them in the self.predictions_df DataFrame 'fidelity' column."""

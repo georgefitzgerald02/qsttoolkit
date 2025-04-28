@@ -5,7 +5,7 @@ import warnings
 
 from qsttoolkit.data.states import cat_state, binomial_state, num_state, gkp_state
 from qsttoolkit.data.num_state_coeffs import num_type_to_param
-from qsttoolkit.utils import _range_error, _random_complex
+from qsttoolkit.utils import _range_error, _random_complex, _deprecation_warning
 
 
 class States:
@@ -35,7 +35,7 @@ class States:
 
     def normalise(self):
         """Deprecated alias for the normalize method."""
-        warnings.warn("normalise is deprecated and will be removed in a future version. Please use normalize instead.", DeprecationWarning, stacklevel=2)
+        _deprecation_warning('normalise', 'normalize')
         self.normalize()
 
     def density_matrices(self) -> list[Qobj]:
@@ -83,17 +83,13 @@ class FockStates(States):
     """
     def __init__(self, n_states: int, dim: int, n_range: list[int, int], N=None):
         """Initializes the FockStates object with the given parameters."""
-        if not dim:
-            if N:
-                dim = N
-                warnings.warn("N is deprecated and will be removed in a future version. Please use dim instead.", DeprecationWarning, stacklevel=2)
-            else:
-                raise ValueError("dim must be specified.")
-        
+        if N:
+            _deprecation_warning('N', 'dim')
+            dim = N
+
         super().__init__(n_states, dim)
         _range_error(n_range, integers=True)
-        if n_range[1] > dim:
-            raise ValueError(f"max_n ({n_range[1]}) cannot be greater than dim ({dim})")
+        if n_range[1] > dim: raise ValueError(f"max_n ({n_range[1]}) cannot be greater than dim ({dim})")
         self.n_range = n_range
         self.init_states()
 
@@ -119,13 +115,10 @@ class CoherentStates(States):
     """
     def __init__(self, n_states: int, dim: int, alpha_magnitude_range: list[float, float], N=None):
         """Initializes the CoherentStates object with the given parameters."""
-        if not dim:
-            if N:
-                dim = N
-                warnings.warn("N is deprecated and will be removed in a future version. Please use dim instead.", DeprecationWarning, stacklevel=2)
-            else:
-                raise ValueError("dim must be specified.")
-        
+        if N:
+            _deprecation_warning('N', 'dim')
+            dim = N
+
         super().__init__(n_states, dim)
         _range_error(alpha_magnitude_range)
         self.alpha_magnitude_range = alpha_magnitude_range
@@ -154,13 +147,10 @@ class ThermalStates(States):
     """
     def __init__(self, n_states: int, dim: int, nbar_range: list[float, float], N=None):
         """Initializes the ThermalStates object with the given parameters."""
-        if not dim:
-            if N:
-                dim = N
-                warnings.warn("N is deprecated and will be removed in a future version. Please use dim instead.", DeprecationWarning, stacklevel=2)
-            else:
-                raise ValueError("dim must be specified.")
-        
+        if N:
+            _deprecation_warning('N', 'dim')
+            dim = N
+
         super().__init__(n_states, dim)
         _range_error(nbar_range)
         self.nbar_range = nbar_range
@@ -192,12 +182,9 @@ class NumStates(States):
     """
     def __init__(self, n_states: int, dim: int, types: list[str], N=None):
         """Initializes the NumStates object with the given parameters."""
-        if not dim:
-            if N:
-                dim = N
-                warnings.warn("N is deprecated and will be removed in a future version. Please use dim instead.", DeprecationWarning, stacklevel=2)
-            else:
-                raise ValueError("dim must be specified.")
+        if N:
+            _deprecation_warning('N', 'dim')
+            dim = N
         
         super().__init__(n_states, dim)
         self.types = types
@@ -228,13 +215,10 @@ class BinomialStates(States):
     """
     def __init__(self, n_states: int, dim: int, S_range: list[int, int], mu_range: list[int, int], N=None):
         """Initializes the BinomialStates object with the given parameters."""
-        if not dim:
-            if N:
-                dim = N
-                warnings.warn("N is deprecated and will be removed in a future version. Please use dim instead.", DeprecationWarning, stacklevel=2)
-            else:
-                raise ValueError("dim must be specified.")
-        
+        if N:
+            _deprecation_warning('N', 'dim')
+            dim = N
+
         super().__init__(n_states, dim)
         _range_error(S_range, integers=True)
         _range_error(mu_range, integers=True)
@@ -268,26 +252,35 @@ class CatStates(States):
         Hilbert space dimensionality.
     alpha_magnitude_range : list[float, float]
         Range of magnitudes for the coherent state parameter alpha.
+    type : str
+        Type of cat state to generate. Must be one of 'positive', 'negative', or 'mix'.
     """
-    def __init__(self, n_states: int, dim: int, alpha_magnitude_range: list[float, float], N=None):
+    def __init__(self, n_states: int, dim: int, alpha_magnitude_range: list[float, float], type: str='positive', N=None):
         """Initializes the CatStates object with the given parameters."""
-        if not dim:
-            if N:
-                dim = N
-                warnings.warn("N is deprecated and will be removed in a future version. Please use dim instead.", DeprecationWarning, stacklevel=2)
-            else:
-                raise ValueError("dim must be specified.")
+        if N:
+            _deprecation_warning('N', 'dim')
+            dim = N
         
         super().__init__(n_states, dim)
         _range_error(alpha_magnitude_range)
+        if type not in ['positive', 'negative', 'mix']: raise ValueError("type must be either 'positive', 'negative' or 'mix'.")
         self.alpha_magnitude_range = alpha_magnitude_range
+        self.type = type
         self.init_states()
 
     def init_states(self):
         """Generates the cat states with the given parameters."""
         for _ in range(self.n_states):
             alpha = _random_complex(self.alpha_magnitude_range)
-            self.states.append(cat_state(self.dim, alpha))
+            if self.type == 'positive':
+                self.states.append(cat_state(self.dim, alpha, positive=True))
+            elif self.type == 'negative':
+                self.states.append(cat_state(self.dim, alpha, positive=False))
+            elif self.type == 'mix':
+                if random.random() < 0.5:
+                    self.states.append(cat_state(self.dim, alpha, positive=True))
+                else:
+                    self.states.append(cat_state(self.dim, alpha, positive=False))
             self.params.append(alpha)
         self.normalize()
 
@@ -312,12 +305,9 @@ class GKPStates(States):
     """
     def __init__(self, n_states: int, dim: int, n1_range: list[int, int], n2_range: list[int, int], delta_range: list[float, float], mu_range: list[int, int], N=None):
         """Initializes the GKPStates object with the given parameters."""
-        if not dim:
-            if N:
-                dim = N
-                warnings.warn("N is deprecated and will be removed in a future version. Please use dim instead.", DeprecationWarning, stacklevel=2)
-            else:
-                raise ValueError("dim must be specified.")
+        if N:
+            _deprecation_warning('N', 'dim')
+            dim = N
         
         super().__init__(n_states, dim)
         _range_error(n1_range, integers=True, positive=False)
@@ -352,12 +342,9 @@ class RandomStates(States):
     """
     def __init__(self, n_states: int, dim: int, N=None):
         """Initializes the RandomStates object with the given parameters."""
-        if not dim:
-            if N:
-                dim = N
-                warnings.warn("N is deprecated and will be removed in a future version. Please use dim instead.", DeprecationWarning, stacklevel=2)
-            else:
-                raise ValueError("dim must be specified.")
+        if N:
+            _deprecation_warning('N', 'dim')
+            dim = N
         
         super().__init__(n_states, dim)
         self.init_states()

@@ -1,15 +1,18 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from qutip import Qobj, coherent, fock
+import time
+from qutip import Qobj
 import tensorflow as tf
 import warnings
 
 from qsttoolkit.quantum import fidelity
-from qsttoolkit.plots import plot_Hinton, plot_Husimi_Q
-from qsttoolkit.utils import _L1_regularisation, _threshold_regularisation, _subplot_number, _subplot_figsize
+from qsttoolkit.plots import plot_hinton, plot_husimi_Q, plot_wigner
+from qsttoolkit.utils import _subplot_number, _subplot_figsize, _deprecation_warning, _no_longer_required_warning
+from qsttoolkit.data.measurement import Husimi_Q_measurement_operators, photon_number_measurement_operators, measurement_operators
+from qsttoolkit.tomography.loss import log_likelihood
 
 
-##### Cholesky parametrization functions #####
+##### Cholesky parametrization functions - once more are introduced, move to their own file #####
 
 def parametrize_density_matrix(rho: tf.Tensor) -> tf.Tensor:
     """
@@ -25,8 +28,7 @@ def parametrize_density_matrix(rho: tf.Tensor) -> tf.Tensor:
     tf.Tensor
         Cholesky decomposition of the density matrix.
     """
-    if type(rho) == Qobj:
-        rho = rho.full()
+    if type(rho) == Qobj: rho = rho.full()
 
     T = tf.linalg.cholesky(rho)  # Lower triangular (batch_size, dim, dim)
 
@@ -34,7 +36,7 @@ def parametrize_density_matrix(rho: tf.Tensor) -> tf.Tensor:
 
 def parameterise_density_matrix(rho: tf.Tensor) -> tf.Tensor:
     """Deprecated alias for parametrize_density_matrix."""
-    warnings.warn("parameterise_density_matrix is deprecated and will be removed in a future version. Please use parametrize_density_matrix instead.", DeprecationWarning, stacklevel=2)
+    _deprecation_warning('parameterise_density_matrix', 'parametrize_density_matrix')
     return parametrize_density_matrix(rho)
 
 def reconstruct_density_matrix(params: tf.Tensor, reg: float=1.0e-10, dim=None) -> tf.Tensor:
@@ -51,8 +53,7 @@ def reconstruct_density_matrix(params: tf.Tensor, reg: float=1.0e-10, dim=None) 
     tf.Tensor
         Reconstructed density matrix.
     """
-    if dim is not None:
-        warnings.warn("dim is deprecated and will be removed in a future version.", DeprecationWarning, stacklevel=2)
+    if dim is not None: _no_longer_required_warning('dim')
 
     # Compute density matrix
     rho = tf.matmul(tf.linalg.adjoint(params), params)
@@ -67,152 +68,15 @@ def reconstruct_density_matrix(params: tf.Tensor, reg: float=1.0e-10, dim=None) 
     return rho
 
 
-##### Loss functions #####
-
-def log_likelihood(rho: tf.Tensor, frequency_data: tf.Tensor, measurement_operators: tf.Tensor, L1_reg: float=0, thresh_reg: float=0, thresh_reg_threshold: float=0.01, dim=None) -> tf.Tensor:
-    """
-    Computes the negative log-likelihood of the data given the density matrix.
-
-    Parameters
-    ----------
-    rho : tf.Tensor
-        Density matrix.
-    frequency_data : tf.Tensor
-        Frequency of each measurement outcome.
-    measurement_operators : tf.Tensor
-        Projective measurement operators corresponding to the measurement outcomes.
-    L1_reg : float
-        L1 regularisation parameter. Defaults to 0.
-    thresh_reg : float
-        Threshold regularisation parameter. Defaults to 0.
-    thresh_reg_threshold : float
-        Threshold for the threshold regularisation. Defaults to 0.01.
-
-    Returns
-    -------
-    tf.Tensor
-        negative log-likelihood of the data given the density matrix.
-    """
-    if dim is not None:
-        warnings.warn("dim is deprecated and will be removed in a future version.", DeprecationWarning, stacklevel=2)
-
-    if type(rho) == Qobj:
-        rho = rho.full()
-
-    # Compute probabilities: p_k = Tr(P_k * rho) for all projectors
-    probabilities = tf.math.real(tf.linalg.trace(tf.matmul(measurement_operators, rho)))
-
-    # Ensure probabilities are numerically stable (avoid log(0))
-    probabilities = tf.clip_by_value(probabilities, 1.0e-10, 1.0)
-
-    # Compute log-likelihood
-    log_likelihood = tf.reduce_sum(frequency_data * tf.math.log(probabilities))
-
-    return -log_likelihood + _L1_regularisation(rho, L1_reg) + _threshold_regularisation(rho, thresh_reg_threshold, thresh_reg)
-
-
-##### Define measurement operators #####
-### Specific measurement operators - to be removed ###
-
-def Husimi_Q_measurement_operators(dim: int, xgrid: np.array, pgrid: np.array) -> np.array:
-    """
-    Computes the measurement operators for the Husimi Q function (projectors of all possible coherent operators created from the phase space provided by xgrid and pgrid).
-    
-    Parameters
-    ----------
-    dim : int
-        Hilbert space dimensionality.
-    xgrid : np.array
-        Phase space X quadrature grid.
-    pgrid : np.array
-        Phase space P quadrature grid.
-
-    Returns
-    -------
-    np.array
-        Measurement operators.
-    """
-    if not isinstance(dim, int): raise ValueError("dim must be an integer.")
-    if not isinstance(xgrid, np.ndarray) or not isinstance(pgrid, np.ndarray): raise ValueError("xgrid and pgrid must be numpy arrays.")
-
-    E = []
-    for x in xgrid:
-        for p in pgrid:
-            E.append(np.outer(coherent(dim, x + 1j*p).full(), coherent(dim, x + 1j*p).full().conj().T))
-    return np.array(E)
-
-def photon_number_measurement_operators(dim: int) -> np.array:
-    """
-    Computes the measurement operators for photon occupation number measurement.
-    
-    Parameters
-    ----------
-    dim : int
-        Hilbert space dimensionality.
-    
-    Returns
-    -------
-    np.array
-        Measurement operators.
-    """
-    if not isinstance(dim, int): raise ValueError("dim must be an integer.")
-
-    E = []
-    for n in range(dim):
-        E.append(np.outer(fock(dim, n).full(), fock(dim, n).full().conj().T))
-    return np.array(E)
-
-
-### Generalised measurement operators ###
-
-def measurement_operators(dim: int, measurement_type: str, **kwargs) -> np.array:
-    """
-    Computes the measurement operators for the specified measurement type.
-
-    Parameters
-    ----------
-    dim : int
-        Hilbert space dimensionality.
-    measurement_type : str
-        Type of measurement to be performed.
-    **kwargs : dict
-        Additional keyword arguments required for specific measurement types.
-
-    Returns
-    -------
-    np.array
-        Measurement operators.
-    """
-    if not isinstance(dim, int): raise ValueError("dim must be an integer.")
-
-    E = []
-    if measurement_type == 'Husimi_Q' or measurement_type == 'Husimi-Q':
-        if measurement_type == 'Husimi-Q':
-            warnings.warn("'Husimi-Q' keyword is deprecated and will be removed in a future version. Please use 'Husimi_Q' instead.", DeprecationWarning, stacklevel=2)
-        if 'xgrid' not in kwargs or 'pgrid' not in kwargs:
-            raise ValueError("For Husimi Q measurement, xgrid and pgrid must be provided.")
-        for x in kwargs['xgrid']:
-            for p in kwargs['pgrid']:
-                E.append(np.outer(coherent(dim, x + 1j*p).full(), coherent(dim, x + 1j*p).full().conj().T))
-    elif measurement_type == 'photon_number':
-        if 'dim_limit' in kwargs:
-            dim = kwargs['dim_limit']
-        for n in range(dim):
-            E.append(np.outer(fock(dim, n).full(), fock(dim, n).full().conj().T))
-    else:
-        raise ValueError(f"Measurement type {measurement_type} not recognized.")
-    return np.array(E)
-
-
 ##### Define constraints - no longer used by MLE #####
 
-def trace_constraint(params: np.array) -> float:
+def trace_constraint(params: np.ndarray) -> float:
     """
     Constraint function to ensure the trace of the density matrix is 1.
     
     Parameters
     ----------
-    params : np.array
+    params : np.ndarray
         Flattened vector of real parameters.
 
     Returns
@@ -225,13 +89,13 @@ def trace_constraint(params: np.array) -> float:
     rho = reconstruct_density_matrix(params)
     return np.trace(rho).real - 1  # Should be zero
 
-def positivity_constraint(params: np.array) -> float:
+def positivity_constraint(params: np.ndarray) -> float:
     """
     Constraint to ensure the density matrix is positive semi-definite.
     
     Parameters
     ----------
-    params : np.array
+    params : np.ndarray
         Flattened vector of real parameters.
 
     Returns
@@ -271,8 +135,7 @@ class QuantumStateTomography:
         float
             Fidelity between the true and reconstructed density matrices.
         """
-        if len(self.reconstructed_dm.shape) != 2:
-            raise ValueError("Invalid shape of reconstructed density matrix.")
+        if len(self.reconstructed_dm.shape) != 2: raise ValueError("Invalid shape of reconstructed density matrix.")
         
         return fidelity(true_dm, self.reconstructed_dm)
 
@@ -288,8 +151,7 @@ class QuantumStateTomography:
 
     def plot_fidelities(self, true_dm=None):
         """Plots the fidelity between the true and reconstructed density matrices over epochs."""
-        if true_dm is not None:
-            warnings.warn("true_dm is deprecated and will be removed in a future version.", DeprecationWarning, stacklevel=2)
+        if true_dm is not None: _no_longer_required_warning('true_dm')
         
         plt.figure(figsize=(5, 4))
         plt.plot(self.fidelities)
@@ -308,7 +170,7 @@ class QuantumStateTomography:
         plt.title('Time taken after epochs')
         plt.show()
 
-    def plot_comparison_Hintons(self, true_dm: np.ndarray):
+    def plot_comparison_hintons(self, true_dm: np.ndarray):
         """
         Plots Hinton diagrams of the true and reconstructed density matrices.
 
@@ -325,21 +187,21 @@ class QuantumStateTomography:
             raise ValueError("unrecognized data type for true_dm.")
 
         _, axs = plt.subplots(1, 2, figsize=(10, 5))
-        plot_Hinton(true_dm, ax=axs[0], label='true density matrix')
+        plot_hinton(true_dm, ax=axs[0], label='true density matrix')
         if len(self.reconstructed_dm.shape) == 2:
             reconstruction = self.reconstructed_dm
         else:
             raise ValueError("Invalid shape of reconstructed density matrix.")
         
-        plot_Hinton(reconstruction, ax=axs[1], label='optimized density matrix')
+        plot_hinton(reconstruction, ax=axs[1], label='optimized density matrix')
         plt.show()
 
-    def plot_comparison_hintons(self, true_dm: np.ndarray):
-        """Deprecated alias for plot_comparison_Hintons."""
-        warnings.warn("plot_comparison_hintons is deprecated and will be removed in a future version. Please use plot_comparison_Hintons instead.", DeprecationWarning, stacklevel=2)
-        return self.plot_comparison_Hintons(true_dm)
+    def plot_comparison_Hintons(self, true_dm: np.ndarray):
+        """Deprecated alias for plot_comparison_hintons. Plots Hinton diagrams of the true and reconstructed density matrices."""
+        _deprecation_warning('plot_comparison_Hintons', 'plot_comparison_hintons')
+        return self.plot_comparison_hintons(true_dm)
 
-    def plot_comparison_Husimi_Qs(self, true_dm: np.ndarray, xgrid: np.ndarray, pgrid: np.ndarray):
+    def plot_comparison_husimi_Qs(self, true_dm: np.ndarray, xgrid: np.ndarray, pgrid: np.ndarray):
         """
         Plots the Husimi Q functions of the true and reconstructed density matrices.
 
@@ -355,16 +217,46 @@ class QuantumStateTomography:
         if not isinstance(xgrid, np.ndarray) or not isinstance(pgrid, np.ndarray): raise ValueError("xgrid and pgrid must be numpy arrays.")
         
         fig, axs = plt.subplots(1, 2, figsize=(10, 5))
-        plot_Husimi_Q(true_dm, xgrid, pgrid, fig=fig, ax=axs[0], label='true density matrix')
+        plot_husimi_Q(true_dm, xgrid, pgrid, fig=fig, ax=axs[0], label='true density matrix')
         if len(self.reconstructed_dm.shape) == 2:
             reconstruction = self.reconstructed_dm
         else:
             raise ValueError("Invalid shape of reconstructed density matrix.")
         
-        plot_Husimi_Q(reconstruction, xgrid, pgrid, fig=fig, ax=axs[1], label='reconstructed density matrix')
+        plot_husimi_Q(reconstruction, xgrid, pgrid, fig=fig, ax=axs[1], label='reconstructed density matrix')
         plt.show()
 
-    def plot_intermediate_Hintons(self):
+    def plot_comparison_Husimi_Qs(self, true_dm: np.ndarray, xgrid: np.ndarray, pgrid: np.ndarray):
+        """Deprecated alias for plot_comparison_husimi_Qs. Plots the Husimi Q functions of the true and reconstructed density matrices."""
+        _deprecation_warning('plot_comparison_Husimi_Qs', 'plot_comparison_husimi_Qs')
+        return self.plot_comparison_husimi_Qs(true_dm, xgrid, pgrid)
+    
+    def plot_comparison_wigners(self, true_dm: np.ndarray, xgrid: np.ndarray, pgrid: np.ndarray):
+        """
+        Plots the Wigner functions of the true and reconstructed density matrices.
+
+        Parameters
+        ----------
+        true_dm : np.ndarray
+            True density matrix.
+        xgrid : np.ndarray
+            Phase space X quadrature grid.
+        pgrid : np.ndarray
+            Phase space P quadrature grid.
+        """
+        if not isinstance(xgrid, np.ndarray) or not isinstance(pgrid, np.ndarray): raise ValueError("xgrid and pgrid must be numpy arrays.")
+        
+        fig, axs = plt.subplots(1, 2, figsize=(10, 5))
+        plot_wigner(true_dm, xgrid, pgrid, fig=fig, ax=axs[0], label='true density matrix')
+        if len(self.reconstructed_dm.shape) == 2:
+            reconstruction = self.reconstructed_dm
+        else:
+            raise ValueError("Invalid shape of reconstructed density matrix.")
+        
+        plot_wigner(reconstruction, xgrid, pgrid, fig=fig, ax=axs[1], label='reconstructed density matrix')
+        plt.show()
+
+    def plot_intermediate_hintons(self):
         """Plots Hinton diagrams of the density matrices in the progress_saves attribute."""
         if len(self.progress_saves[0].shape) == 2:
             reconstructions = self.progress_saves
@@ -375,15 +267,15 @@ class QuantumStateTomography:
         _, axs = plt.subplots(subplot_number[0], subplot_number[1], figsize=_subplot_figsize(len(reconstructions)), squeeze=False)
         axs = np.array(axs).flatten()
         for i, dm in enumerate(reconstructions):
-            plot_Hinton(dm, ax=axs[i], label=f"save {i}")
+            plot_hinton(dm, ax=axs[i], label=f"save {i}")
         plt.show()
 
-    def plot_intermediate_hintons(self):
-        """Deprecated alias for plot_intermediate_Hintons."""
-        warnings.warn("plot_intermediate_hintons is deprecated and will be removed in a future version. Please use plot_intermediate_Hintons instead.", DeprecationWarning, stacklevel=2)
-        return self.plot_intermediate_Hintons()
+    def plot_intermediate_Hintons(self):
+        """Deprecated alias for plot_intermediate_hintons. Plots Hinton diagrams of the density matrices in the progress_saves attribute."""
+        _deprecation_warning('plot_intermediate_Hintons', 'plot_intermediate_hintons')
+        return self.plot_intermediate_hintons()
 
-    def plot_intermediate_Husimi_Qs(self, xgrid: np.ndarray, pgrid: np.ndarray):
+    def plot_intermediate_husimi_Qs(self, xgrid: np.ndarray, pgrid: np.ndarray):
         """
         Plots the Husimi Q functions of the density matrices in the progress_saves attribute.
 
@@ -405,5 +297,130 @@ class QuantumStateTomography:
         fig, axs = plt.subplots(subplot_number[0], subplot_number[1], figsize=_subplot_figsize(len(reconstructions)))
         axs = axs.flatten()
         for i, dm in enumerate(reconstructions):
-            plot_Husimi_Q(dm, xgrid, pgrid, fig=fig, ax=axs[i], label=f"save {i}")
+            plot_husimi_Q(dm, xgrid, pgrid, fig=fig, ax=axs[i], label=f"save {i}")
         plt.show()
+
+    def plot_intermediate_Husimi_Qs(self, xgrid: np.ndarray, pgrid: np.ndarray):
+        """Deprecated alias for plot_intermediate_husimi_Qs. Plots the Husimi Q functions of the density matrices in the progress_saves attribute."""
+        _deprecation_warning('plot_intermediate_Husimi_Qs', 'plot_intermediate_husimi_Qs')
+        return self.plot_intermediate_husimi_Qs(xgrid, pgrid)
+    
+    def plot_intermediate_wigners(self, xgrid: np.ndarray, pgrid: np.ndarray):
+        """
+        Plots the Wigner functions of the density matrices in the progress_saves attribute.
+
+        Parameters
+        ----------
+        xgrid : np.ndarray
+            Phase space X quadrature grid.
+        pgrid : np.ndarray
+            Phase space P quadrature grid.
+        """
+        if not isinstance(xgrid, np.ndarray) or not isinstance(pgrid, np.ndarray): raise ValueError("xgrid and pgrid must be numpy arrays.")
+        
+        if len(self.progress_saves[0].shape) == 2:
+            reconstructions = self.progress_saves
+        else:
+            raise ValueError("Invalid shape of reconstructed density matrices.")
+        
+        subplot_number = _subplot_number(len(reconstructions))
+        fig, axs = plt.subplots(subplot_number[0], subplot_number[1], figsize=_subplot_figsize(len(reconstructions)))
+        axs = axs.flatten()
+        for i, dm in enumerate(reconstructions):
+            plot_wigner(dm, xgrid, pgrid, fig=fig, ax=axs[i], label=f"save {i}")
+        plt.show()
+
+class CustomQuantumStateTomography(QuantumStateTomography):
+    """
+    A class for designing custom quantum state tomography methods.
+    
+    Attributes
+    ----------
+    model : tf.keras.Model
+        Model used for the reconstruction.
+    training_step_fn : callable
+        Function that defines the training step for the model. Arguments must include [model, measurement_data, measurement_operators]. Must return the generated density matrix and the loss.
+    """
+    def __init__(self, model, training_step_fn):
+        super().__init__()
+        self.model = model
+        self.training_step_fn = training_step_fn
+
+    def reconstruct(self, measurement_data, measurement_operators, epochs, optimizer, verbose_interval: int=None, num_progress_saves: int=None, true_dm: tf.Tensor=None, time_log_interval: int=None, **kwargs):
+        """
+        Reconstructs the density matrix using a custom method.
+
+        Parameters
+        ----------
+        initial_dm : np.ndarray
+            Initial density matrix.
+        measurement_data : np.ndarray
+            Frequency of each measurement outcome.
+        measurement_operators : np.ndarray
+            Projective operators corresponding to the measurement outcomes.
+        epochs : int
+            Number of training epochs.
+        optimizer : tf.keras.optimizers.Optimizer
+            Optimizer for the training step.
+        verbose_interval : int
+            Interval at which to print progress updates. Defaults to None.
+        num_progress_saves : int
+            Number of intermediate progress saves to make. Defaults to None.
+        true_dm : tf.Tensor
+            True density matrix used for calculating fidelities. Defaults to None.
+        time_log_interval : int
+            Interval at which to log the time taken after each epoch. Defaults to None.
+        """
+        # Input error handling
+        if len(measurement_data[0]) != len(measurement_operators): raise ValueError("measurement_data[0] and measurement_operators must have the same length.")
+        if not all([isinstance(data, np.ndarray) for data in measurement_data]): raise ValueError("All elements of measurement_data must be numpy arrays.")
+        # if not all([isinstance(op, np.ndarray) for op in measurement_operators]): raise ValueError("All elements of measurement_operators must be numpy arrays.")
+        if not isinstance(epochs, int): raise ValueError("epochs must be an integer.")
+        if not isinstance(verbose_interval, int) and verbose_interval is not None: raise ValueError("verbose_interval must be an integer.")
+        if not isinstance(num_progress_saves, int) and num_progress_saves is not None: raise ValueError("num_progress_saves must be an integer.")
+        if not isinstance(time_log_interval, int) and time_log_interval is not None: raise ValueError("time_log_interval must be an integer.")
+        
+        self.optimizer = optimizer
+        self.losses = []
+        if num_progress_saves:
+            progress_save_interval = epochs // num_progress_saves
+            self.progress_saves = []
+        else:
+            self.progress_saves = None
+        self.fidelities = [] if true_dm is not None else None
+        if time_log_interval:
+            start_time = time.time()
+            self.times = []
+        else:
+            self.times = None
+
+        for epoch in range(epochs):
+            # Forward pass through generator
+            with tf.GradientTape() as tape:
+                generated_dm, epoch_loss = self.training_step_fn(self.model, measurement_data, measurement_operators, **kwargs)
+
+            # Backpropagation
+            gradients = tape.gradient(epoch_loss, self.model.trainable_variables)
+            optimizer.apply_gradients(zip(gradients, self.model.trainable_variables))
+            
+            self.losses.append(epoch_loss.numpy())
+
+            # Log fidelity
+            if true_dm is not None:
+                epoch_fidelity = fidelity(true_dm, generated_dm[0].numpy())
+                self.fidelities.append(epoch_fidelity)
+
+            # Save progress
+            if num_progress_saves and epoch % progress_save_interval == 0:
+                self.progress_saves.append(generated_dm[0].numpy())
+
+            # Log progress
+            if verbose_interval and epoch % verbose_interval == 0:
+                print(f"Epoch {epoch}/{epochs}, Loss: {epoch_loss.numpy()}, Fidelity: {epoch_fidelity if true_dm is not None else None}")
+
+            # Log time
+            if time_log_interval and epoch % time_log_interval == 0:
+                self.times.append(time.time() - start_time)
+
+        self.reconstructed_dm = generated_dm[0].numpy()
+        if verbose_interval: print('Reconstruction complete.')
