@@ -4,7 +4,7 @@ qsttoolkit.tomography Subpackage
 
 This subpackage contains models for performing quantum state tomography. Each model is implemented in its own class, each inheriting basic performance analysis and plotting functions from a parent class `qsttoolkit.tomography.QST`.
 
-The fundamental aim of QSTToolkit is to provide modular, 'drag-and-drop' functions for researching, testing and comparing quantum state tomography methods in different experimental situations. Experimentation with combinations of tomography components is encouraged - for example, using a generator model with a different density matrix parametrization and loss function.
+The fundamental aim of QSTToolkit is to provide modular, 'drag-and-drop' functions for researching, testing and comparing quantum state tomography methods in different experimental situations. This is enabled by the `CustomQuantumStateTomography` class, which allows a user to define a single pass of their own custom tomography training loop. Experimentation with combinations of tomography components is encouraged - for example, using a generator model with a different density matrix parametrization and loss function.
 
 Traditional QST
 ===============
@@ -34,6 +34,14 @@ Global QST Utility Functions
 Functions used in both traditional and deep learning methods for quantum state tomography.
 
 .. automodule:: qsttoolkit.tomography.QST
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Loss Functions
+==============
+
+.. automodule:: qsttoolkit.tomography.loss
    :members:
    :undoc-members:
    :show-inheritance:

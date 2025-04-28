@@ -1,5 +1,5 @@
 ===============================
-QSTToolkit v1.1.1 Documentation
+QSTToolkit v1.2.0 Documentation
 ===============================
 
 Subpackages
